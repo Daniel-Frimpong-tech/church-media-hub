@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "RCW Media",
+  title: "RCW Media app",
   description: "An app to help manage church media duties",
 };
 
