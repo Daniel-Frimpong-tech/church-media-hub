@@ -25,6 +25,10 @@ export async function invitePerson(
   const teamValue = formData.get("team_id");
   const teamId = typeof teamValue === "string" && teamValue ? teamValue : null;
 
+  if (role === "viewer" && !teamId) {
+    return { error: "Choose the team this viewer belongs to. Without one they cannot see anything." };
+  }
+
   const supabase = await createClient();
 
   const { data: existing } = await supabase

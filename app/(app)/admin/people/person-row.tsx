@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -35,6 +36,14 @@ export function PersonRow({
         <span className="text-body-sm break-all text-muted">{person.email}</span>
         {teamNames.length > 0 ? (
           <span className="text-caption text-muted">{teamNames.join(", ")}</span>
+        ) : null}
+        {person.role === "viewer" && person.active && teamNames.length === 0 ? (
+          <p className="rounded-sm bg-warning-soft px-3 py-2 text-body-sm text-warning">
+            Not on a team, so they cannot see any photos or handoffs.{" "}
+            <Link href="/admin/teams" className="underline">
+              Add them to a team
+            </Link>
+          </p>
         ) : null}
       </div>
 

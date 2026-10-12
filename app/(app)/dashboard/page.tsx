@@ -105,6 +105,16 @@ export default async function DashboardPage() {
   ).filter((handoff) => handoff.stage !== "delivered");
   const lateCount = openHandoffs.filter((handoff) => handoff.stage === "late").length;
 
+  // A viewer with no team can see nothing, which otherwise looks like a bug.
+  const viewerWithoutTeam =
+    profile.role === "viewer" &&
+    ((
+      await supabase
+        .from("team_members")
+        .select("team_id", { count: "exact", head: true })
+        .eq("profile_id", profile.id)
+    ).count ?? 0) === 0;
+
   const googleProblem =
     canManage && (!connection || connection.status === "expired");
 
@@ -119,6 +129,16 @@ export default async function DashboardPage() {
           </span>
         </div>
       </div>
+
+      {viewerWithoutTeam ? (
+        <div role="status" className="flex flex-col gap-1 rounded-md bg-warning-soft p-4">
+          <p className="text-title text-warning">You are not on a team yet</p>
+          <p className="text-body-sm text-ink-soft">
+            You will see photos, videos and handoffs once an admin adds you to
+            your team. Ask a media team admin to do that.
+          </p>
+        </div>
+      ) : null}
 
       {googleProblem ? (
         <div
