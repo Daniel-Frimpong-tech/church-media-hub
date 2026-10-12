@@ -155,3 +155,21 @@ const RECENT_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
 export function recentCutoff(now: Date = new Date()): string {
   return new Date(now.getTime() - RECENT_WINDOW_MS).toISOString();
 }
+
+/** "Good morning" / "Good afternoon" / "Good evening", by the church's clock. */
+export function greeting(now: Date = new Date()): string {
+  const hour = Number(churchClockTime(now).slice(0, 2));
+  if (hour < 12) return "Good morning";
+  if (hour < 18) return "Good afternoon";
+  return "Good evening";
+}
+
+/** "Wednesday, October 15" */
+export function formatChurchLongDate(instant: Date | string): string {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: CHURCH_TIME_ZONE,
+    weekday: "long",
+    month: "long",
+    day: "numeric",
+  }).format(new Date(instant));
+}
