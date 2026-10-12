@@ -6,7 +6,7 @@ import { after } from "next/server";
 import { requireAdmin, requireProfile } from "@/lib/auth";
 import { churchLocalToUtc, serviceFolderName } from "@/lib/domain/time";
 import { getDriveSession } from "@/lib/google/connection";
-import { moveToBin, renameFile } from "@/lib/google/drive";
+import { DriveError, moveToBin, renameFile } from "@/lib/google/drive";
 import type { FormState } from "@/lib/form-state";
 import {
   announceServiceCreated,
@@ -143,26 +143,51 @@ export async function deleteService(
   if (!serviceId) return { error: "Service not found." };
 
   const supabase = await createClient();
-  const { count } = await supabase
-    .from("uploads")
-    .select("id", { count: "exact", head: true })
-    .eq("service_id", serviceId);
-  if ((count ?? 0) > 0) {
+  const [{ data: service }, { count }] = await Promise.all([
+    supabase
+      .from("services")
+      .select("name, drive_folder_id, series_id, series_slot")
+      .eq("id", serviceId)
+      .maybeSingle(),
+    supabase
+      .from("uploads")
+      .select("id", { count: "exact", head: true })
+      .eq("service_id", serviceId),
+  ]);
+  if (!service) return { error: "Service not found." };
+  const uploadCount = count ?? 0;
+
+  // Deleting uploads is serious, so the admin must type the service's name.
+  if (uploadCount > 0 && text(formData, "confirm_name") !== service.name) {
     return {
-      error:
-        "This service has uploads, so it cannot be deleted. That protects the record of who uploaded what.",
+      error: `Type the service name exactly (${service.name}) to confirm.`,
     };
   }
 
-  const { data: service } = await supabase
-    .from("services")
-    .select("drive_folder_id, series_id, series_slot")
-    .eq("id", serviceId)
-    .maybeSingle();
+  // Drive first. The folder, with everything in it, goes to the Drive bin,
+  // where it can be restored for 30 days. If that fails while there are files,
+  // stop: otherwise the records would be gone but the files left behind with
+  // nothing pointing at them.
+  if (service.drive_folder_id) {
+    try {
+      const { accessToken } = await getDriveSession();
+      await moveToBin(accessToken, service.drive_folder_id);
+    } catch (binError) {
+      if (!(binError instanceof DriveError && binError.status === 404)) {
+        console.error("Moving the Drive folder to the bin failed", binError);
+        if (uploadCount > 0) {
+          return {
+            error:
+              "Could not reach Google Drive, so nothing was deleted. Check the Google connection under Admin and try again.",
+          };
+        }
+      }
+    }
+  }
 
   // If the weekly schedule created this service, remember that this
   // occurrence was removed on purpose, or the next run would recreate it.
-  if (service?.series_id && service.series_slot) {
+  if (service.series_id && service.series_slot) {
     const skip = await supabase.from("service_series_skips").upsert({
       series_id: service.series_id,
       series_slot: service.series_slot,
@@ -170,23 +195,58 @@ export async function deleteService(
     if (skip.error) return { error: GENERIC_ERROR };
   }
 
+  if (uploadCount > 0) {
+    const removed = await supabase.from("uploads").delete().eq("service_id", serviceId);
+    if (removed.error) return { error: GENERIC_ERROR };
+  }
   const { error } = await supabase.from("services").delete().eq("id", serviceId);
   if (error) return { error: GENERIC_ERROR };
 
-  // The folder is empty (no uploads). Move it to the Drive bin so it does not
-  // linger; it can be restored from there for 30 days.
-  if (service?.drive_folder_id) {
+  revalidatePath("/", "layout");
+  redirect("/services");
+}
+
+/** An admin removes one photo or video. */
+export async function deleteUpload(
+  _previous: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  await requireAdmin();
+
+  const uploadId = text(formData, "upload_id");
+  if (!uploadId) return { error: "File not found." };
+
+  const supabase = await createClient();
+  const { data: upload } = await supabase
+    .from("uploads")
+    .select("id, drive_file_id")
+    .eq("id", uploadId)
+    .maybeSingle();
+  if (!upload) return { error: "That file has already been deleted." };
+
+  // To the Drive bin first (restorable for 30 days), then the record. If
+  // Drive cannot be reached, leave both alone.
+  if (upload.drive_file_id) {
     try {
       const { accessToken } = await getDriveSession();
-      await moveToBin(accessToken, service.drive_folder_id);
+      await moveToBin(accessToken, upload.drive_file_id);
     } catch (binError) {
-      console.error("Moving the Drive folder to the bin failed", binError);
+      // Already gone from Drive is fine: carry on and remove the record.
+      if (!(binError instanceof DriveError && binError.status === 404)) {
+        console.error("Moving a file to the Drive bin failed", binError);
+        return {
+          error: "Could not reach Google Drive, so the file was not deleted. Try again.",
+        };
+      }
     }
   }
 
-  revalidatePath("/services");
-  revalidatePath("/dashboard");
-  redirect("/services");
+  const { error } = await supabase.from("uploads").delete().eq("id", upload.id);
+  if (error) return { error: GENERIC_ERROR };
+
+  // Albums, the gallery, counts and handoffs can all change.
+  revalidatePath("/", "layout");
+  return {};
 }
 
 export async function addAssignment(

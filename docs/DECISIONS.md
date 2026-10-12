@@ -452,13 +452,22 @@ columns. A member needs to set "done" on their own task without being able to
 reassign it; a viewer needs to set "received" without being able to move the
 deadline. A function is the narrowest tool for that.
 
-### Services with uploads cannot be deleted
+### Deleting is possible, deliberate, and recoverable in Drive
 
-**Choice:** Deleting a service is allowed only while it has no upload records.
-Its empty Drive folder goes to the Drive bin.
+**Choice:** Admins can delete a single file from the full-size view, and can
+delete a service together with its uploads by typing the service's name. In
+both cases the Drive file or folder is moved to the Drive bin first, and only
+then are the records removed. If Drive cannot be reached, nothing is deleted.
+The database still refuses to delete a service that has upload records, so the
+app removes those explicitly, in that order.
 
-**Why:** Upload records are the audit trail the team asked for. An accidental
-delete should not erase who delivered what, or orphan files in Drive.
+**Why:** At first a service with uploads could not be deleted at all, to protect
+the record of who delivered what. That turned out to be too strict: test data
+has to be cleared before real use, and mistakes happen. Typing the name makes an
+accidental delete very unlikely, and the Drive bin keeps the files themselves
+restorable for 30 days. Doing Drive first means a failure never leaves files in
+Drive with no record pointing at them. The upload records are not recoverable,
+and the screen says so before the button unlocks.
 
 ## Phase 6: Telegram bot
 
@@ -628,3 +637,58 @@ is computed each week in `America/Los_Angeles`.
 **Why:** Storing "every 168 hours from a first date" would drift by an hour
 twice a year. "Sunday at 10:00" should mean 10am at church in both winter and
 summer, and the tests check the weeks either side of both clock changes.
+
+## Phase 8: Finishing
+
+### The main-flow test runs against a throwaway stack, not the real project
+
+**Choice:** `tests/e2e/main-flow.spec.ts` drives a real browser through
+"create a service, upload a photo, see it in the album and the gallery". In CI
+it runs against a local Supabase started with `supabase start` (a real Postgres
+with every migration and the seed, plus the real auth and API services) and a
+small fake Google Drive server (`tests/e2e/fake-google.mjs`).
+
+**Why:** The flow crosses every layer: sign-in, Row Level Security, server
+actions, the upload endpoints, the browser uploading to "Google", the server
+confirming the file, thumbnails and downloads. Mocking those inside the app
+would test the mocks. Running against the real project would put test data in
+front of the team and need real secrets in CI. A throwaway stack exercises the
+real code paths with nothing real at stake.
+
+Only Google is faked, at the network edge: the app makes the same HTTP calls it
+makes to Drive, and the fake answers them. The switch that redirects those
+calls (`E2E_FAKE_GOOGLE_URL`) is ignored on any Vercel deployment, so the live
+site cannot be pointed at a fake.
+
+### Signing in for the test
+
+**Choice:** The test creates an invited admin with a password through the local
+Supabase's admin API, signs in with it, and gives the browser the resulting
+session cookies.
+
+**Why:** The app only offers Google sign-in, which an automated test cannot
+complete. Password sign-in exists only in the local test stack; the session it
+produces is the same kind of cookie the app normally sets, so everything after
+sign-in is the real path, including the invite gate that runs when the user is
+created.
+
+### It runs in CI, and is skipped where there is no Docker
+
+**Choice:** Without the local Supabase settings the main-flow test is skipped
+and only the signed-out browser tests run.
+
+**Why:** A local Supabase needs Docker and a few gigabytes of images, which is
+too much to require for every `npm run test:e2e` on a laptop. GitHub Actions
+has Docker, so the test runs on every push, which is where it matters.
+
+### Seed data is checked by a test
+
+**Choice:** `supabase/seed.sql` builds a believable week (people, teams, last
+Sunday partly delivered, next Sunday planned) with dates computed from "now".
+`tests/db/seed.test.ts` applies it to the in-process Postgres and asserts the
+state it is meant to produce.
+
+**Why:** The seed is what CI's Supabase starts with, so a mistake in it would
+stop the main-flow test from running at all. Testing it also keeps it honest as
+the schema changes: a migration that breaks the seed fails a test instead of
+being discovered months later.

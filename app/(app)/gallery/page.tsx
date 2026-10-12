@@ -21,7 +21,7 @@ export const metadata: Metadata = { title: "Gallery" };
 export default async function GalleryPage({
   searchParams,
 }: PageProps<"/gallery">) {
-  await requireProfile();
+  const profile = await requireProfile();
   const filters = parseGalleryFilters(await searchParams);
   const supabase = await createClient();
 
@@ -123,7 +123,7 @@ export default async function GalleryPage({
             : "No photos or videos yet. They appear here as soon as they are uploaded."}
         </p>
       ) : (
-        <GalleryGrid items={items} />
+        <GalleryGrid items={items} canDelete={profile.role === "admin"} />
       )}
 
       {filters.page > 1 || hasNextPage ? (

@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { isDriveSessionUrl } from "@/lib/domain/uploads";
+import { googleApiOrigin } from "@/lib/env";
 import { getUploadProgress } from "@/lib/google/drive";
 import {
   readJson,
@@ -23,7 +24,7 @@ export async function POST(request: NextRequest) {
   // before this server calls it.
   if (
     typeof sessionUrl !== "string" ||
-    !isDriveSessionUrl(sessionUrl) ||
+    !isDriveSessionUrl(sessionUrl, googleApiOrigin()) ||
     typeof size !== "number" ||
     !Number.isSafeInteger(size) ||
     size <= 0

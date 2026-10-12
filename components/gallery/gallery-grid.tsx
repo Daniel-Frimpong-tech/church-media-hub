@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { deleteUpload } from "@/app/(app)/services/actions";
+import { ActionButton } from "@/components/ui/action-button";
 import { buttonClasses } from "@/components/ui/button";
 import { DIRECT_DOWNLOAD_MAX_BYTES } from "@/lib/domain/gallery";
 import { formatBytes } from "@/lib/domain/uploads";
@@ -9,8 +11,19 @@ import type { GalleryItem } from "./types";
 const thumbUrl = (id: string, size: 400 | 1600) => `/api/thumb/${id}?size=${size}`;
 
 /** A photo-album grid. Tap a tile to see it full size, swipe or use arrows to move. */
-export function GalleryGrid({ items }: { items: GalleryItem[] }) {
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
+export function GalleryGrid({
+  items,
+  canDelete = false,
+}: {
+  items: GalleryItem[];
+  /** Admins get a Delete button in the full-size view. */
+  canDelete?: boolean;
+}) {
+  const [requestedIndex, setOpenIndex] = useState<number | null>(null);
+  // After a delete the list is shorter. If the open position no longer exists
+  // (it was the last one), close the viewer.
+  const openIndex =
+    requestedIndex !== null && requestedIndex < items.length ? requestedIndex : null;
 
   return (
     <>
@@ -27,6 +40,7 @@ export function GalleryGrid({ items }: { items: GalleryItem[] }) {
           index={openIndex}
           onChange={setOpenIndex}
           onClose={() => setOpenIndex(null)}
+          canDelete={canDelete}
         />
       ) : null}
     </>
@@ -74,11 +88,13 @@ function Lightbox({
   index,
   onChange,
   onClose,
+  canDelete,
 }: {
   items: GalleryItem[];
   index: number;
   onChange: (index: number) => void;
   onClose: () => void;
+  canDelete: boolean;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const touchStartX = useRef<number | null>(null);
@@ -211,6 +227,19 @@ function Lightbox({
               Opens in Google Drive. Use the same Google account you sign in
               here with.
             </p>
+          ) : null}
+          {canDelete ? (
+            // Keyed by file so a message about one file never shows on the next.
+            <ActionButton
+              key={item.id}
+              action={deleteUpload}
+              fields={{ upload_id: item.id }}
+              label="Delete this file"
+              pendingLabel="Deleting…"
+              variant="danger"
+              className="self-start"
+              confirmMessage={`Delete ${item.fileName}? It moves to the Google Drive bin, where it can be restored for 30 days.`}
+            />
           ) : null}
         </div>
       </div>
