@@ -382,3 +382,80 @@ Pacific time, not on when the file was uploaded.
 **Why:** "Baptism, May 2025" means photos of baptisms held in May, even if
 someone uploaded them in June. The range covers whole days in the church's time
 zone, so an evening service on the last day is included.
+
+## Phase 5: Assignments and handoffs
+
+### Database rules are tested against a real Postgres
+
+**Choice:** `tests/db` starts PGlite (Postgres compiled to run inside Node),
+applies every file in `supabase/migrations`, and then runs queries as an admin,
+a member, viewers on different teams, and a signed-out visitor.
+
+**Why:** Row Level Security and triggers are the real protection in this app,
+and they are written in SQL, which TypeScript tests cannot reach. These tests
+check the actual policies: a viewer on the wrong team gets no rows, a member
+cannot promote themselves, an uninvited sign-up is rolled back. They also catch
+a broken migration before it is pushed to the live database. PGlite needs no
+Docker and is a free dev dependency. The harness adds small stand-ins for what
+Supabase provides (the three API roles, `auth.users`, `auth.uid()`).
+
+### Handoffs are maintained by database triggers
+
+**Choice:** A `handoffs` row exists for every service, category and receiving
+team. Triggers create them when a service is created, move their deadlines when
+the service is rescheduled or the team's allowance changes, and add or remove
+them when a category's teams change.
+
+**Why:** Services will be created three ways: by an admin, by the recurring
+schedule, and possibly by hand in the database. Triggers make handoffs correct
+for all of them, where app code would have to remember to do it in each place.
+
+### Status is worked out, not stored
+
+**Choice:** A handoff stores three facts: when it is due, when the content
+became ready, and when the team confirmed it. "Pending", "ready", "delivered"
+and "late" are computed from those and the current time by `handoffStage`.
+
+**Why:** "Late" becomes true just because time passes. A stored status would
+need a job to flip it and would be wrong in between. Computing it is always
+right, and the same function serves the dashboard and the Telegram alerts.
+
+### When a category counts as ready
+
+**Choice:** A category is ready for its teams when everyone assigned to it has
+marked their task done. If nobody is assigned to it, it is ready as soon as one
+file is uploaded.
+
+**Why:** "Ready" should mean the team can start work without finding half the
+photos missing. The people shooting know when they are finished; the first
+upload does not. The fallback keeps small services, where nobody bothered to
+assign anyone, from being stuck forever.
+
+### Who gets chased
+
+**Choice:** A task is outstanding when it is not marked done and that person
+has uploaded nothing to that category for that service (`outstandingTasks`).
+
+**Why:** Chasing someone who has already uploaded, but forgot to tap "done", is
+how reminders get ignored. This one function decides both the "still to upload"
+count on the dashboard and, in phase 6, who the Telegram bot tags.
+
+### Marking done and confirming receipt go through database functions
+
+**Choice:** `set_task_done` and `set_handoff_received` are Postgres functions.
+Each checks the caller (the assigned person or an admin; someone on the
+receiving team or an admin) and changes only the relevant timestamp. Signed-in
+users have no direct write access to handoffs at all.
+
+**Why:** Row Level Security can say which rows someone may update but not which
+columns. A member needs to set "done" on their own task without being able to
+reassign it; a viewer needs to set "received" without being able to move the
+deadline. A function is the narrowest tool for that.
+
+### Services with uploads cannot be deleted
+
+**Choice:** Deleting a service is allowed only while it has no upload records.
+Its empty Drive folder goes to the Drive bin.
+
+**Why:** Upload records are the audit trail the team asked for. An accidental
+delete should not erase who delivered what, or orphan files in Drive.

@@ -38,3 +38,34 @@ export function wasDeliveredLate(timing: HandoffTiming): boolean {
     timing.receivedAt.getTime() > timing.dueAt.getTime()
   );
 }
+
+/**
+ * What to show for a handoff. Adds "ready" to the three stored-fact statuses:
+ * the content is there, and the team has not confirmed it yet.
+ */
+export type HandoffStage = "waiting" | "ready" | "delivered" | "late";
+
+export type HandoffProgress = HandoffTiming & {
+  /** When the content became ready for the team, if it has. */
+  readyAt: Date | null;
+};
+
+export function handoffStage(progress: HandoffProgress, now: Date): HandoffStage {
+  const status = handoffStatus(progress, now);
+  if (status === "delivered") return "delivered";
+  // Overdue and unconfirmed is late whether or not the content is ready: the
+  // deadline is about the team having it.
+  if (status === "late") return "late";
+  return progress.readyAt ? "ready" : "waiting";
+}
+
+/** True when the deadline is close enough to be worth flagging. */
+export function isDueSoon(
+  timing: HandoffTiming,
+  now: Date,
+  withinHours: number = 6,
+): boolean {
+  if (timing.receivedAt) return false;
+  const remaining = timing.dueAt.getTime() - now.getTime();
+  return remaining > 0 && remaining <= withinHours * MS_PER_HOUR;
+}

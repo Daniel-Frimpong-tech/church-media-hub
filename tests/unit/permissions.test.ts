@@ -33,9 +33,6 @@ describe("can", () => {
     }
   });
 
-  it("does not let members mark handoffs received", () => {
-    expect(can("member", "mark_handoff_received")).toBe(false);
-  });
 });
 
 describe("canViewCategory", () => {
@@ -83,8 +80,13 @@ describe("canMarkHandoffReceived", () => {
     expect(canMarkHandoffReceived(admin, SOCIAL)).toBe(true);
   });
 
-  it("stops a member confirming a handoff even if they are on the team", () => {
-    const member = { role: "member" as const, teamIds: [THUMBNAILS] };
+  it("stops a member who is not on the team", () => {
+    const member = { role: "member" as const, teamIds: [] };
     expect(canMarkHandoffReceived(member, THUMBNAILS)).toBe(false);
+  });
+
+  it("lets a member who is also on the receiving team confirm", () => {
+    const member = { role: "member" as const, teamIds: [THUMBNAILS] };
+    expect(canMarkHandoffReceived(member, THUMBNAILS)).toBe(true);
   });
 });
