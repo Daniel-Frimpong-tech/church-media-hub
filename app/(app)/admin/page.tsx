@@ -25,6 +25,11 @@ const SECTIONS = [
     title: "Google Drive",
     body: "The church Google account where photos and videos are stored.",
   },
+  {
+    href: "/admin/telegram",
+    title: "Telegram",
+    body: "The bot that posts reminders and handoffs in the team group.",
+  },
 ];
 
 export default async function AdminPage() {

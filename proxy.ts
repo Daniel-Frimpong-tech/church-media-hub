@@ -47,8 +47,31 @@ export async function proxy(request: NextRequest) {
   const signedIn = Boolean(data?.claims);
   const { pathname } = request.nextUrl;
 
+  // API routes are called by scripts on our pages, not visited. A redirect to
+  // the login page would be read as a successful (but nonsense) reply, so
+  // answer with a clear "signed out" error instead.
+  if (!signedIn && pathname.startsWith("/api/") && !isPublic(pathname)) {
+    return NextResponse.json(
+      {
+        error: {
+          code: "signed_out",
+          message: "You have been signed out. Sign in and try again.",
+        },
+      },
+      { status: 401 },
+    );
+  }
+
   if (!signedIn && !isPublic(pathname)) {
-    return redirectKeepingCookies(request, response, "/login");
+    // Remember where they were going (for example a link from the Telegram
+    // bot) so sign-in can bring them back to it.
+    const destination = `${pathname}${request.nextUrl.search}`;
+    return redirectKeepingCookies(
+      request,
+      response,
+      "/login",
+      destination === "/" ? undefined : destination,
+    );
   }
   if (signedIn && pathname === "/login") {
     return redirectKeepingCookies(request, response, "/dashboard");
@@ -61,10 +84,12 @@ function redirectKeepingCookies(
   request: NextRequest,
   from: NextResponse,
   pathname: string,
+  next?: string,
 ): NextResponse {
   const url = request.nextUrl.clone();
   url.pathname = pathname;
   url.search = "";
+  if (next) url.searchParams.set("next", next);
   const redirect = NextResponse.redirect(url);
   for (const cookie of from.cookies.getAll()) {
     redirect.cookies.set(cookie);

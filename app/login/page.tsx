@@ -19,7 +19,7 @@ const ERRORS: Record<string, { title: string; body: string }> = {
 };
 
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {
-  const { error } = await searchParams;
+  const { error, next } = await searchParams;
   const message = typeof error === "string" ? ERRORS[error] : undefined;
 
   return (
@@ -42,7 +42,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
       ) : null}
 
       <div className="flex flex-col gap-3">
-        <GoogleSignInButton />
+        <GoogleSignInButton next={typeof next === "string" ? next : undefined} />
         <p className="text-body-sm text-muted">
           Invite only. Use the Google account an admin invited.
         </p>
