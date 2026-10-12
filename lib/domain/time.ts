@@ -109,3 +109,13 @@ export function slugify(name: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 }
+
+const UPCOMING_GRACE_MS = 4 * 60 * 60 * 1000;
+
+/**
+ * Services starting after this instant count as "upcoming". A service stays
+ * upcoming for a few hours after it starts, while people are still uploading.
+ */
+export function upcomingCutoff(now: Date = new Date()): string {
+  return new Date(now.getTime() - UPCOMING_GRACE_MS).toISOString();
+}

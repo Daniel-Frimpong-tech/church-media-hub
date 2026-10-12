@@ -2,17 +2,16 @@ import Link from "next/link";
 import { AppNav, type NavItem } from "@/components/nav/app-nav";
 import { Button } from "@/components/ui/button";
 import { requireProfile } from "@/lib/auth";
-import { can } from "@/lib/domain/permissions";
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
   const profile = await requireProfile();
 
-  const items: NavItem[] = [{ href: "/dashboard", label: "Dashboard" }];
-  if (can(profile.role, "manage_people")) {
-    items.push({ href: "/admin/people", label: "People" });
-  }
-  if (can(profile.role, "manage_teams")) {
-    items.push({ href: "/admin/teams", label: "Teams" });
+  const items: NavItem[] = [
+    { href: "/dashboard", label: "Dashboard" },
+    { href: "/services", label: "Services" },
+  ];
+  if (profile.role === "admin") {
+    items.push({ href: "/admin", label: "Admin" });
   }
 
   return (

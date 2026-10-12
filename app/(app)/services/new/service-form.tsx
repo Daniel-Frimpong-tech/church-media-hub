@@ -1,0 +1,47 @@
+"use client";
+
+import { useActionState } from "react";
+import { Button } from "@/components/ui/button";
+import { FormMessage } from "@/components/ui/form-message";
+import { Input } from "@/components/ui/input";
+import { EMPTY_FORM_STATE } from "@/lib/form-state";
+import { createService } from "../actions";
+
+export function ServiceForm({ defaultDate }: { defaultDate: string }) {
+  const [state, action, pending] = useActionState(
+    createService,
+    EMPTY_FORM_STATE,
+  );
+
+  return (
+    <form action={action} className="flex flex-col gap-4">
+      <Input
+        label="Name"
+        name="name"
+        defaultValue="Sunday Service"
+        maxLength={80}
+        required
+      />
+      <div className="grid grid-cols-2 gap-4">
+        <Input
+          label="Date"
+          name="date"
+          type="date"
+          defaultValue={defaultDate}
+          required
+        />
+        <Input
+          label="Time (Pacific)"
+          name="time"
+          type="time"
+          defaultValue="10:00"
+          required
+        />
+      </div>
+      <FormMessage state={state} />
+      <Button type="submit" disabled={pending}>
+        {pending ? "Creating service and folders…" : "Create service"}
+      </Button>
+    </form>
+  );
+}
