@@ -65,3 +65,13 @@ test("API routes answer signed-out calls with an error, not the login page", asy
   );
   expect(thumbnail.status()).toBe(401);
 });
+
+test("the login page explains when an account is not invited", async ({
+  page,
+}) => {
+  await page.goto("/login?error=not_invited");
+  // Next.js adds its own hidden role="alert" element, so match ours by text.
+  await expect(
+    page.getByRole("alert").filter({ hasText: "has not been invited" }),
+  ).toBeVisible();
+});
