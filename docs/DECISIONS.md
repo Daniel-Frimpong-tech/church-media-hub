@@ -165,3 +165,76 @@ migration.
 **Why:** Generating it needs the Supabase CLI to be logged in and linked, which
 is a manual step. Once that is done it will be regenerated with
 `npx supabase gen types typescript --linked` and kept that way.
+
+## Phase 2: Services and Google Drive
+
+### One church Google account, connected once by an admin
+
+**Choice:** An admin signs in once with the church Google account. The app keeps
+that account's refresh token and uses it for every Drive action, whoever is
+signed in to the app.
+
+**Why:** Files have to be owned by the church account so they count against its
+1 TB and stay put when volunteers leave. If each volunteer uploaded with their
+own Google sign-in, the files would live in their personal Drives.
+
+### The `drive.file` scope
+
+**Choice:** The app asks Google only for `drive.file`.
+
+**Why:** It is the narrowest Drive permission: the app can see and change only
+the files and folders it created itself, nothing else in the church's Drive. That
+is enough because the app creates the "RCW Media" folder and everything inside
+it. It is also a "non-sensitive" scope, so Google does not require a security
+review before the app can be published. The trade-off: a file someone drops into
+those folders by hand in Drive is invisible to the app.
+
+### Refresh token encrypted with AES-256-GCM, readable only with the secret key
+
+**Choice:** The refresh token is encrypted with a key held in an environment
+variable (`TOKEN_ENCRYPTION_KEY`) before it is stored. The table it lives in has
+Row Level Security on and no policies, so no signed-in user can read it, not
+even an admin. Only server code using the Supabase secret key can.
+
+**Why:** Two separate things would have to leak (the database and the server's
+environment) before anyone could reach the church's Drive. GCM also detects
+tampering: a modified value fails to decrypt instead of producing garbage.
+Because local development and the live site share one database, they must use
+the same `TOKEN_ENCRYPTION_KEY`.
+
+### Plain `fetch` instead of Google's SDK
+
+**Choice:** `lib/google` calls Google's HTTP endpoints directly.
+
+**Why:** The app needs four calls: exchange a code, refresh a token, create a
+folder, start an upload. The official `googleapis` package is very large and
+would slow every server start for the sake of those four.
+
+### Saving the service never depends on Drive
+
+**Choice:** Creating a service saves it first, then creates folders. If Drive
+fails, the service is kept and marked `failed` with the reason, and its page
+offers a retry. Folder creation records each folder ID as soon as it exists, so
+a retry only makes what is missing.
+
+**Why:** Google being slow, or the connection having expired, should not lose an
+admin's work or leave duplicate folders behind after a retry.
+
+### An expired connection is recorded, not just thrown
+
+**Choice:** When Google rejects the refresh token, the connection row is marked
+`expired`. Admins then see a "Reconnect Google" banner on the dashboard.
+
+**Why:** The person who hits the failure may be a volunteer who cannot fix it.
+Recording it means the next admin to open the app is told, instead of finding
+out when uploads are already missing.
+
+### Times are stored in UTC and shown in Pacific time
+
+**Choice:** `services.starts_at` is a UTC timestamp. Forms take a Pacific date
+and time and convert with `churchLocalToUtc`; every display formats back to
+`America/Los_Angeles`.
+
+**Why:** Vercel's servers run in UTC and a volunteer's phone could be in any
+zone. Converting explicitly, with tests on both daylight-saving changeovers,
+means "10:00" always means 10am at church.
