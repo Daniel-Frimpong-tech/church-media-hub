@@ -112,9 +112,29 @@ export default async function ServicePage({
     (categories.data ?? []).map((category) => [category.id, category.name]),
   );
   const withFolder = new Set((folders.data ?? []).map((row) => row.category_id));
+  // Viewers see only categories delivered to one of their teams. Listing the
+  // others as "0 files" would be misleading: the files exist, just not for them.
+  let visibleCategoryIds: Set<string> | null = null;
+  if (profile.role === "viewer") {
+    const { data: myTeams } = await supabase
+      .from("team_members")
+      .select("team_id")
+      .eq("profile_id", profile.id);
+    const teamIds = (myTeams ?? []).map((row) => row.team_id);
+    const { data: delivered } =
+      teamIds.length > 0
+        ? await supabase
+            .from("category_teams")
+            .select("category_id")
+            .in("team_id", teamIds)
+        : { data: [] };
+    visibleCategoryIds = new Set((delivered ?? []).map((row) => row.category_id));
+  }
   // Show active categories, plus retired ones this service already has.
   const shown = (categories.data ?? []).filter(
-    (category) => category.is_active || withFolder.has(category.id),
+    (category) =>
+      (category.is_active || withFolder.has(category.id)) &&
+      (visibleCategoryIds === null || visibleCategoryIds.has(category.id)),
   );
   const missing = shown.filter(
     (category) => category.is_active && !withFolder.has(category.id),
@@ -305,6 +325,13 @@ export default async function ServicePage({
 
       <Card className="flex flex-col gap-3">
         <h2 className="text-title-lg text-ink">Categories</h2>
+        {shown.length === 0 ? (
+          <p className="text-body-sm text-muted">
+            {profile.role === "viewer"
+              ? "Nothing from this service is delivered to your team. If you expected something, ask an admin to check which team you are on."
+              : "There are no active categories. Add one under Admin → Categories."}
+          </p>
+        ) : null}
         <ul className="divide-y divide-hairline-soft">
           {shown.map((category) => (
             <li
