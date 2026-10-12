@@ -1,16 +1,23 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { HandoffList } from "@/components/handoffs/handoff-list";
+import { ActionButton } from "@/components/ui/action-button";
 import { Badge } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Uploader } from "@/components/upload/uploader";
+import { loadAssignments } from "@/lib/assignments";
 import { requireProfile } from "@/lib/auth";
+import { outstandingTasks } from "@/lib/domain/assignments";
 import { can } from "@/lib/domain/permissions";
-import { formatChurchDate, formatChurchTime } from "@/lib/domain/time";
+import { currentTime, formatChurchDate, formatChurchTime } from "@/lib/domain/time";
 import { getGoogleConnectionSummary } from "@/lib/google/connection";
 import { driveFolderUrl } from "@/lib/google/links";
+import { describeHandoffs } from "@/lib/handoffs";
 import { createClient } from "@/lib/supabase/server";
+import { removeAssignment, setTaskDone } from "../actions";
+import { AddAssignmentForm } from "./add-assignment-form";
 import { RetryFolders } from "./retry-folders";
 
 export const metadata: Metadata = { title: "Service" };
@@ -64,6 +71,43 @@ export default async function ServicePage({
   const nameById = new Map(
     (uploaders?.data ?? []).map((person) => [person.id, person.full_name]),
   );
+  // Assignments, the people and roles they refer to, and handoffs.
+  const [assignments, dutyRoles, people, handoffRows] = await Promise.all([
+    loadAssignments(supabase, [id]),
+    supabase.from("duty_roles").select("*").order("sort_order"),
+    supabase
+      .from("profiles")
+      .select("id, full_name, role, active")
+      .order("full_name"),
+    supabase.from("handoffs").select("*").eq("service_id", id),
+  ]);
+  const personNameById = new Map(
+    (people.data ?? []).map((person) => [person.id, person.full_name]),
+  );
+  const dutyRoleNameById = new Map(
+    (dutyRoles.data ?? []).map((role) => [role.id, role.name]),
+  );
+  const assignable = (people.data ?? [])
+    .filter((person) => person.active && person.role !== "viewer")
+    .map((person) => ({ id: person.id, name: person.full_name }));
+  const handoffs = await describeHandoffs(
+    supabase,
+    handoffRows.data ?? [],
+    profile,
+    currentTime(),
+  );
+  // Who still owes what: not marked done and nothing uploaded by them.
+  const outstanding = new Set(
+    outstandingTasks(
+      assignments.flatMap((assignment) => assignment.tasks),
+      (uploads.data ?? []).map((upload) => ({
+        serviceId: id,
+        categoryId: upload.category_id,
+        uploadedBy: upload.uploaded_by,
+      })),
+    ).map((task) => `${task.assignmentId}:${task.categoryId}`),
+  );
+
   const categoryNameById = new Map(
     (categories.data ?? []).map((category) => [category.id, category.name]),
   );
@@ -100,6 +144,14 @@ export default async function ServicePage({
         <p className="text-body text-ink-soft">
           {formatChurchDate(service.data.starts_at)} ·{" "}
           {formatChurchTime(service.data.starts_at)}
+          {canManage ? (
+            <>
+              {" · "}
+              <Link href={`/services/${id}/edit`} className="text-primary underline">
+                Edit
+              </Link>
+            </>
+          ) : null}
         </p>
       </div>
 
@@ -137,6 +189,117 @@ export default async function ServicePage({
         <Card className="flex flex-col gap-4">
           <h2 className="text-title-lg text-ink">Upload</h2>
           <Uploader serviceId={service.data.id} categories={uploadTargets} />
+        </Card>
+      ) : null}
+
+      {assignments.length > 0 || canManage ? (
+        <Card className="flex flex-col gap-4">
+          <h2 className="text-title-lg text-ink">Who is covering this</h2>
+          {assignments.length === 0 ? (
+            <p className="text-body-sm text-muted">Nobody is assigned yet.</p>
+          ) : (
+            <ul className="divide-y divide-hairline-soft">
+              {assignments.map((assignment) => {
+                const isMine = assignment.profileId === profile.id;
+                return (
+                  <li key={assignment.id} className="flex flex-col gap-2 py-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-title text-ink">
+                          {personNameById.get(assignment.profileId) ?? "Someone"}
+                        </span>
+                        <Badge>
+                          {dutyRoleNameById.get(assignment.dutyRoleId) ?? "Role"}
+                        </Badge>
+                        {isMine ? <Badge tone="accent">You</Badge> : null}
+                      </div>
+                      {canManage ? (
+                        <ActionButton
+                          action={removeAssignment}
+                          fields={{ assignment_id: assignment.id, service_id: id }}
+                          label="Remove"
+                          variant="ghost"
+                          ariaLabel={`Remove ${personNameById.get(assignment.profileId) ?? "this person"}`}
+                        />
+                      ) : null}
+                    </div>
+                    <ul className="flex flex-col gap-2">
+                      {assignment.tasks.map((task) => {
+                        const done = task.doneAt !== null;
+                        const missing = outstanding.has(
+                          `${task.assignmentId}:${task.categoryId}`,
+                        );
+                        return (
+                          <li
+                            key={task.categoryId}
+                            className="flex flex-wrap items-center justify-between gap-2"
+                          >
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="text-body-sm text-ink-soft">
+                                {categoryNameById.get(task.categoryId) ?? "Category"}
+                              </span>
+                              {done ? (
+                                <Badge tone="success">Done</Badge>
+                              ) : missing ? (
+                                <Badge tone="warning">Nothing uploaded yet</Badge>
+                              ) : (
+                                <Badge>Uploaded, not marked done</Badge>
+                              )}
+                            </div>
+                            {isMine || canManage ? (
+                              <ActionButton
+                                action={setTaskDone}
+                                fields={{
+                                  assignment_id: task.assignmentId,
+                                  category_id: task.categoryId,
+                                  service_id: id,
+                                  done: done ? "false" : "true",
+                                }}
+                                label={done ? "Reopen" : "Mark done"}
+                                variant={done ? "ghost" : "secondary"}
+                                ariaLabel={`${done ? "Reopen" : "Mark done"}: ${categoryNameById.get(task.categoryId) ?? "category"} for ${personNameById.get(assignment.profileId) ?? "this person"}`}
+                              />
+                            ) : null}
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          {canManage ? (
+            <details className="rounded-sm border border-hairline p-4">
+              <summary className="cursor-pointer text-body-sm font-medium text-ink">
+                Assign someone
+              </summary>
+              <div className="pt-4">
+                <AddAssignmentForm
+                  serviceId={id}
+                  people={assignable}
+                  dutyRoles={(dutyRoles.data ?? []).map((role) => ({
+                    id: role.id,
+                    name: role.name,
+                  }))}
+                  categories={shown
+                    .filter((category) => category.is_active)
+                    .map((category) => ({ id: category.id, name: category.name }))}
+                />
+              </div>
+            </details>
+          ) : null}
+        </Card>
+      ) : null}
+
+      {handoffs.length > 0 ? (
+        <Card className="flex flex-col gap-3">
+          <h2 className="text-title-lg text-ink">Handoffs</h2>
+          <HandoffList
+            handoffs={handoffs}
+            showService={false}
+            isAdmin={profile.role === "admin"}
+          />
         </Card>
       ) : null}
 
