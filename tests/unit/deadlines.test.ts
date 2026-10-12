@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   handoffDueAt,
+  handoffStage,
   handoffStatus,
+  isDueSoon,
   wasDeliveredLate,
 } from "@/lib/domain/deadlines";
 
@@ -58,5 +60,51 @@ describe("wasDeliveredLate", () => {
 
   it("is false when not received yet", () => {
     expect(wasDeliveredLate({ dueAt, receivedAt: null })).toBe(false);
+  });
+});
+
+describe("handoffStage", () => {
+  const before = new Date("2025-10-13T10:00:00Z");
+  const after = new Date("2025-10-13T18:00:00Z");
+  const readyAt = new Date("2025-10-12T22:00:00Z");
+
+  it("is waiting until the content is ready", () => {
+    expect(handoffStage({ dueAt, readyAt: null, receivedAt: null }, before)).toBe("waiting");
+  });
+
+  it("is ready once the content is there but unconfirmed", () => {
+    expect(handoffStage({ dueAt, readyAt, receivedAt: null }, before)).toBe("ready");
+  });
+
+  it("is late past the deadline even if the content is ready", () => {
+    expect(handoffStage({ dueAt, readyAt, receivedAt: null }, after)).toBe("late");
+    expect(handoffStage({ dueAt, readyAt: null, receivedAt: null }, after)).toBe("late");
+  });
+
+  it("is delivered once confirmed, whenever that was", () => {
+    const receivedAt = new Date("2025-10-14T09:00:00Z");
+    expect(handoffStage({ dueAt, readyAt, receivedAt }, after)).toBe("delivered");
+  });
+});
+
+describe("isDueSoon", () => {
+  it("is true inside the last six hours", () => {
+    const now = new Date("2025-10-13T12:00:00Z");
+    expect(isDueSoon({ dueAt, receivedAt: null }, now)).toBe(true);
+  });
+
+  it("is false with plenty of time left", () => {
+    const now = new Date("2025-10-12T20:00:00Z");
+    expect(isDueSoon({ dueAt, receivedAt: null }, now)).toBe(false);
+  });
+
+  it("is false once the deadline has passed (that is late, not soon)", () => {
+    const now = new Date("2025-10-13T18:00:00Z");
+    expect(isDueSoon({ dueAt, receivedAt: null }, now)).toBe(false);
+  });
+
+  it("is false once delivered", () => {
+    const now = new Date("2025-10-13T12:00:00Z");
+    expect(isDueSoon({ dueAt, receivedAt: now }, now)).toBe(false);
   });
 });

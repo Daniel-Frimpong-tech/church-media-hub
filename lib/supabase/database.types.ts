@@ -199,6 +199,56 @@ export type Database = {
           },
         ];
       };
+      duty_roles: {
+        Row: { id: string; name: string; sort_order: number };
+        Insert: { name: string; sort_order?: number };
+        Update: { name?: string; sort_order?: number };
+        Relationships: [];
+      };
+      assignments: {
+        Row: {
+          id: string;
+          service_id: string;
+          profile_id: string;
+          duty_role_id: string;
+          created_at: string;
+        };
+        Insert: {
+          service_id: string;
+          profile_id: string;
+          duty_role_id: string;
+        };
+        Update: never;
+        Relationships: [];
+      };
+      assignment_categories: {
+        Row: {
+          assignment_id: string;
+          category_id: string;
+          done_at: string | null;
+        };
+        Insert: { assignment_id: string; category_id: string };
+        // Marking done goes through the set_task_done function.
+        Update: never;
+        Relationships: [];
+      };
+      // Changed only by database triggers and set_handoff_received.
+      handoffs: {
+        Row: {
+          id: string;
+          service_id: string;
+          category_id: string;
+          team_id: string;
+          due_at: string;
+          ready_at: string | null;
+          received_at: string | null;
+          received_by: string | null;
+          created_at: string;
+        };
+        Insert: never;
+        Update: never;
+        Relationships: [];
+      };
       // Readable only with the secret key. See lib/google/grants.ts.
       drive_grants: {
         Row: {
@@ -255,7 +305,16 @@ export type Database = {
       };
     };
     Views: { [_ in never]: never };
-    Functions: { [_ in never]: never };
+    Functions: {
+      set_task_done: {
+        Args: { p_assignment_id: string; p_category_id: string; p_done: boolean };
+        Returns: undefined;
+      };
+      set_handoff_received: {
+        Args: { p_handoff_id: string; p_received: boolean };
+        Returns: undefined;
+      };
+    };
     Enums: {
       app_role: AppRole;
       team_kind: TeamKind;
@@ -279,3 +338,8 @@ export type ServiceFolder =
 export type Upload = Database["public"]["Tables"]["uploads"]["Row"];
 export type CategoryTeam =
   Database["public"]["Tables"]["category_teams"]["Row"];
+export type DutyRole = Database["public"]["Tables"]["duty_roles"]["Row"];
+export type Assignment = Database["public"]["Tables"]["assignments"]["Row"];
+export type AssignmentCategory =
+  Database["public"]["Tables"]["assignment_categories"]["Row"];
+export type Handoff = Database["public"]["Tables"]["handoffs"]["Row"];

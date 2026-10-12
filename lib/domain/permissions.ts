@@ -26,8 +26,9 @@ const ALLOWED: Record<Action, readonly Role[]> = {
   upload_media: ["admin", "member"],
   complete_tasks: ["admin", "member"],
   view_all_media: ["admin", "member"],
-  // Receiving teams confirm their own deliveries; admins can do it for them.
-  mark_handoff_received: ["admin", "viewer"],
+  // Whether someone may confirm a particular handoff also depends on their
+  // team: see canMarkHandoffReceived.
+  mark_handoff_received: ["admin", "member", "viewer"],
 };
 
 export function can(role: Role, action: Action): boolean {
@@ -53,13 +54,13 @@ export function canViewCategory(
 }
 
 /**
- * A viewer may mark a handoff received only for a team they belong to.
- * Admins may mark any handoff.
+ * Anyone on the receiving team may confirm that team's handoff. Admins may
+ * confirm any handoff. The database function set_handoff_received enforces
+ * the same rule.
  */
 export function canMarkHandoffReceived(
   viewer: Viewer,
   handoffTeamId: string,
 ): boolean {
-  if (!can(viewer.role, "mark_handoff_received")) return false;
   return viewer.role === "admin" || viewer.teamIds.includes(handoffTeamId);
 }
