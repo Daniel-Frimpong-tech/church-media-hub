@@ -14,8 +14,6 @@ env:
   NEXT_PUBLIC_APP_URL: http://localhost:3100
   NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_placeholder
-  TELEGRAM_WEBHOOK_SECRET: ci-webhook-secret
-  CRON_SECRET: ci-cron-secret
 
 jobs:
   check:
@@ -43,6 +41,23 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx playwright install --with-deps chromium
+
+      # A throwaway Supabase for the main-flow test: Postgres with every
+      # migration and the seed applied, plus the auth and API services.
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Start local Supabase
+        run: supabase start -x studio,imgproxy,realtime,storage-api,edge-runtime,logflare,vector,supavisor,mailpit
+      - name: Read local Supabase settings
+        run: |
+          supabase status -o env | grep -E '^[A-Z_]+=' > supabase-status.env
+          set -a; source supabase-status.env; set +a
+          test -n "$API_URL"
+          echo "E2E_SUPABASE_URL=$API_URL" >> "$GITHUB_ENV"
+          echo "E2E_SUPABASE_ANON_KEY=${ANON_KEY:-$PUBLISHABLE_KEY}" >> "$GITHUB_ENV"
+          echo "E2E_SUPABASE_SERVICE_KEY=${SERVICE_ROLE_KEY:-$SECRET_KEY}" >> "$GITHUB_ENV"
+
       - run: npm run test:e2e
       - uses: actions/upload-artifact@v4
         if: failure()

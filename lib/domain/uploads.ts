@@ -131,13 +131,18 @@ export function bytesReceived(rangeHeader: string | null): number {
 /**
  * Upload session links are handed to the browser and come back to our server
  * when resuming. Only ever call ones that really point at Google's upload API.
+ *
+ * `apiOrigin` is Google's real address everywhere except the end-to-end test,
+ * which runs a fake Drive.
  */
-export function isDriveSessionUrl(value: string): boolean {
+export function isDriveSessionUrl(
+  value: string,
+  apiOrigin: string = "https://www.googleapis.com",
+): boolean {
   try {
     const url = new URL(value);
     return (
-      url.protocol === "https:" &&
-      url.hostname === "www.googleapis.com" &&
+      url.origin === apiOrigin &&
       url.pathname === "/upload/drive/v3/files" &&
       url.searchParams.get("uploadType") === "resumable" &&
       Boolean(url.searchParams.get("upload_id"))

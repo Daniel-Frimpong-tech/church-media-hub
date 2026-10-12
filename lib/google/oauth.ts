@@ -1,6 +1,6 @@
 import "server-only";
 
-import { googleClientId, googleClientSecret } from "@/lib/env";
+import { googleClientId, googleClientSecret, googleTokenUrl } from "@/lib/env";
 
 /**
  * drive.file is the narrowest Drive scope: the app can only see files and
@@ -10,7 +10,6 @@ export const DRIVE_FILE_SCOPE = "https://www.googleapis.com/auth/drive.file";
 const SCOPES = ["openid", "email", DRIVE_FILE_SCOPE];
 
 const AUTH_URL = "https://accounts.google.com/o/oauth2/v2/auth";
-const TOKEN_URL = "https://oauth2.googleapis.com/token";
 
 /** The stored refresh token no longer works. An admin has to reconnect. */
 export class GoogleConnectionExpiredError extends Error {
@@ -50,7 +49,7 @@ type TokenResponse = {
 };
 
 async function requestToken(body: Record<string, string>): Promise<TokenResponse> {
-  const response = await fetch(TOKEN_URL, {
+  const response = await fetch(googleTokenUrl(), {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({

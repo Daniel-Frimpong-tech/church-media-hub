@@ -92,3 +92,25 @@ export function telegramWebhookSecret(): string | null {
 export function cronSecret(): string | null {
   return process.env.CRON_SECRET || null;
 }
+
+// ── Test seam ───────────────────────────────────────────────────────────────
+
+/**
+ * The end-to-end test points Google calls at a fake Drive running on the test
+ * machine. Deliberately ignored on any Vercel deployment, so the live site can
+ * only ever talk to the real Google.
+ */
+function fakeGoogleOrigin(): string | null {
+  if (process.env.VERCEL) return null;
+  return process.env.E2E_FAKE_GOOGLE_URL?.replace(/\/+$/, "") || null;
+}
+
+/** Origin of the Google APIs: "https://www.googleapis.com" outside tests. */
+export function googleApiOrigin(): string {
+  return fakeGoogleOrigin() ?? "https://www.googleapis.com";
+}
+
+export function googleTokenUrl(): string {
+  const fake = fakeGoogleOrigin();
+  return fake ? `${fake}/token` : "https://oauth2.googleapis.com/token";
+}

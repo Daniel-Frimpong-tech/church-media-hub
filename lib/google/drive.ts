@@ -1,8 +1,9 @@
 import "server-only";
 
+import { googleApiOrigin } from "@/lib/env";
 import { GoogleConnectionExpiredError } from "./oauth";
 
-const FILES_URL = "https://www.googleapis.com/drive/v3/files";
+const filesUrl = () => `${googleApiOrigin()}/drive/v3/files`;
 const FOLDER_MIME_TYPE = "application/vnd.google-apps.folder";
 
 export class DriveError extends Error {
@@ -42,7 +43,7 @@ export async function createFolder(
   name: string,
   parentId?: string,
 ): Promise<string> {
-  const response = await driveFetch(accessToken, `${FILES_URL}?fields=id`, {
+  const response = await driveFetch(accessToken, `${filesUrl()}?fields=id`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -63,7 +64,7 @@ export async function folderExists(
   try {
     const response = await driveFetch(
       accessToken,
-      `${FILES_URL}/${encodeURIComponent(folderId)}?fields=id,trashed`,
+      `${filesUrl()}/${encodeURIComponent(folderId)}?fields=id,trashed`,
       { method: "GET" },
     );
     const { trashed } = (await response.json()) as { trashed?: boolean };
@@ -74,7 +75,7 @@ export async function folderExists(
   }
 }
 
-const UPLOAD_URL = "https://www.googleapis.com/upload/drive/v3/files";
+const uploadUrl = () => `${googleApiOrigin()}/upload/drive/v3/files`;
 
 /**
  * Starts a resumable upload and returns the session link the browser sends the
@@ -91,7 +92,7 @@ export async function startResumableUpload(
 ): Promise<string> {
   const response = await driveFetch(
     accessToken,
-    `${UPLOAD_URL}?uploadType=resumable&fields=id`,
+    `${uploadUrl()}?uploadType=resumable&fields=id`,
     {
       method: "POST",
       headers: {
@@ -164,7 +165,7 @@ export async function getFile(
   try {
     const response = await driveFetch(
       accessToken,
-      `${FILES_URL}/${encodeURIComponent(fileId)}?fields=id,name,mimeType,size,parents,trashed`,
+      `${filesUrl()}/${encodeURIComponent(fileId)}?fields=id,name,mimeType,size,parents,trashed`,
       { method: "GET" },
     );
     const file = (await response.json()) as {
@@ -200,7 +201,7 @@ export async function getThumbnailLink(
   try {
     const response = await driveFetch(
       accessToken,
-      `${FILES_URL}/${encodeURIComponent(fileId)}?fields=thumbnailLink`,
+      `${filesUrl()}/${encodeURIComponent(fileId)}?fields=thumbnailLink`,
       { method: "GET" },
     );
     const { thumbnailLink } = (await response.json()) as {
@@ -227,7 +228,7 @@ export async function downloadFile(
 ): Promise<Response> {
   return driveFetch(
     accessToken,
-    `${FILES_URL}/${encodeURIComponent(fileId)}?alt=media`,
+    `${filesUrl()}/${encodeURIComponent(fileId)}?alt=media`,
     { method: "GET" },
   );
 }
@@ -243,7 +244,7 @@ export async function grantReader(
 ): Promise<string> {
   const response = await driveFetch(
     accessToken,
-    `${FILES_URL}/${encodeURIComponent(fileId)}/permissions?sendNotificationEmail=false&fields=id`,
+    `${filesUrl()}/${encodeURIComponent(fileId)}/permissions?sendNotificationEmail=false&fields=id`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -263,7 +264,7 @@ export async function removePermission(
   try {
     await driveFetch(
       accessToken,
-      `${FILES_URL}/${encodeURIComponent(fileId)}/permissions/${encodeURIComponent(permissionId)}`,
+      `${filesUrl()}/${encodeURIComponent(fileId)}/permissions/${encodeURIComponent(permissionId)}`,
       { method: "DELETE" },
     );
   } catch (error) {
@@ -278,7 +279,7 @@ export async function renameFile(
   fileId: string,
   name: string,
 ): Promise<void> {
-  await driveFetch(accessToken, `${FILES_URL}/${encodeURIComponent(fileId)}?fields=id`, {
+  await driveFetch(accessToken, `${filesUrl()}/${encodeURIComponent(fileId)}?fields=id`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ name }),
@@ -287,7 +288,7 @@ export async function renameFile(
 
 /** Moves a file or folder to the Drive bin, where it can be restored for 30 days. */
 export async function moveToBin(accessToken: string, fileId: string): Promise<void> {
-  await driveFetch(accessToken, `${FILES_URL}/${encodeURIComponent(fileId)}?fields=id`, {
+  await driveFetch(accessToken, `${filesUrl()}/${encodeURIComponent(fileId)}?fields=id`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ trashed: true }),
