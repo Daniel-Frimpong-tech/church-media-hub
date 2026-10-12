@@ -5,6 +5,8 @@ export type AppRole = "admin" | "member" | "viewer";
 export type TeamKind = "media" | "receiving";
 export type DriveFolderStatus = "pending" | "ready" | "failed";
 export type GoogleConnectionStatus = "connected" | "expired";
+export type UploadStatus = "uploading" | "complete" | "failed";
+export type UploadSource = "app" | "import";
 
 export type Database = {
   public: {
@@ -140,6 +142,55 @@ export type Database = {
         Update: never;
         Relationships: [];
       };
+      category_teams: {
+        Row: {
+          category_id: string;
+          team_id: string;
+          deadline_hours: number;
+          created_at: string;
+        };
+        Insert: {
+          category_id: string;
+          team_id: string;
+          deadline_hours?: number;
+        };
+        Update: {
+          deadline_hours?: number;
+        };
+        Relationships: [];
+      };
+      uploads: {
+        Row: {
+          id: string;
+          service_id: string;
+          category_id: string;
+          uploaded_by: string | null;
+          drive_file_id: string | null;
+          file_name: string;
+          mime_type: string;
+          size_bytes: number;
+          status: UploadStatus;
+          source: UploadSource;
+          created_at: string;
+          completed_at: string | null;
+        };
+        Insert: {
+          service_id: string;
+          category_id: string;
+          uploaded_by: string;
+          file_name: string;
+          mime_type: string;
+          size_bytes: number;
+        };
+        // Only the server (secret key) updates uploads.
+        Update: {
+          drive_file_id?: string | null;
+          size_bytes?: number;
+          status?: UploadStatus;
+          completed_at?: string | null;
+        };
+        Relationships: [];
+      };
       // Readable only with the secret key. See lib/google/connection.ts.
       google_connection: {
         Row: {
@@ -181,6 +232,8 @@ export type Database = {
       team_kind: TeamKind;
       drive_folder_status: DriveFolderStatus;
       google_connection_status: GoogleConnectionStatus;
+      upload_status: UploadStatus;
+      upload_source: UploadSource;
     };
     CompositeTypes: { [_ in never]: never };
   };
@@ -194,3 +247,6 @@ export type Category = Database["public"]["Tables"]["categories"]["Row"];
 export type Service = Database["public"]["Tables"]["services"]["Row"];
 export type ServiceFolder =
   Database["public"]["Tables"]["service_folders"]["Row"];
+export type Upload = Database["public"]["Tables"]["uploads"]["Row"];
+export type CategoryTeam =
+  Database["public"]["Tables"]["category_teams"]["Row"];
