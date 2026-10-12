@@ -1,6 +1,14 @@
 // Hand-written to match supabase/migrations. Once the Supabase CLI is linked,
 // regenerate with: npx supabase gen types typescript --linked
 
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[];
+
 export type AppRole = "admin" | "member" | "viewer";
 export type TeamKind = "media" | "receiving";
 export type DriveFolderStatus = "pending" | "ready" | "failed";
@@ -116,11 +124,15 @@ export type Database = {
           drive_error: string | null;
           created_by: string | null;
           created_at: string;
+          series_id: string | null;
+          series_slot: string | null;
         };
         Insert: {
           name: string;
           starts_at: string;
           created_by?: string | null;
+          series_id?: string | null;
+          series_slot?: string | null;
         };
         Update: {
           name?: string;
@@ -129,6 +141,31 @@ export type Database = {
           drive_folder_status?: DriveFolderStatus;
           drive_error?: string | null;
         };
+        Relationships: [];
+      };
+      service_series: {
+        Row: {
+          id: string;
+          name: string;
+          weekday: number;
+          local_time: string;
+          active: boolean;
+          created_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          name: string;
+          weekday: number;
+          local_time: string;
+          created_by?: string | null;
+        };
+        Update: { name?: string; active?: boolean };
+        Relationships: [];
+      };
+      service_series_skips: {
+        Row: { series_id: string; series_slot: string; created_at: string };
+        Insert: { series_id: string; series_slot: string };
+        Update: never;
         Relationships: [];
       };
       service_folders: {
@@ -261,6 +298,8 @@ export type Database = {
           telegram_chat_title: string | null;
           telegram_linked_by: string | null;
           telegram_linked_at: string | null;
+          last_job_run_at: string | null;
+          last_job_result: Json | null;
         };
         Insert: never;
         Update: {
@@ -268,6 +307,8 @@ export type Database = {
           telegram_chat_title?: string | null;
           telegram_linked_by?: string | null;
           telegram_linked_at?: string | null;
+          last_job_run_at?: string | null;
+          last_job_result?: Json | null;
         };
         Relationships: [];
       };
@@ -404,3 +445,5 @@ export type Assignment = Database["public"]["Tables"]["assignments"]["Row"];
 export type AssignmentCategory =
   Database["public"]["Tables"]["assignment_categories"]["Row"];
 export type Handoff = Database["public"]["Tables"]["handoffs"]["Row"];
+export type ServiceSeries =
+  Database["public"]["Tables"]["service_series"]["Row"];
