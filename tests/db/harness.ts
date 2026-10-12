@@ -17,10 +17,23 @@ const SUPABASE_STANDINS = `
   create role service_role nologin bypassrls;
 
   create schema auth;
+  -- The columns of Supabase's auth.users that the migrations and seed touch.
   create table auth.users (
     id uuid primary key default gen_random_uuid(),
+    instance_id uuid,
+    aud text,
+    role text,
     email text,
-    raw_user_meta_data jsonb not null default '{}'
+    encrypted_password text,
+    email_confirmed_at timestamptz,
+    raw_app_meta_data jsonb,
+    raw_user_meta_data jsonb not null default '{}',
+    created_at timestamptz,
+    updated_at timestamptz,
+    confirmation_token text,
+    recovery_token text,
+    email_change text,
+    email_change_token_new text
   );
   -- Supabase reads the signed-in user's ID from the request's token.
   create function auth.uid() returns uuid language sql stable as $$
@@ -46,10 +59,23 @@ export async function createTestDatabase(): Promise<TestDatabase> {
   return new TestDatabase(pg);
 }
 
+/** A test database with supabase/seed.sql applied on top of the migrations. */
+export async function createSeededDatabase(): Promise<TestDatabase> {
+  const db = await createTestDatabase();
+  await db.exec(readFileSync(join(process.cwd(), "supabase", "seed.sql"), "utf8"));
+  return db;
+}
+
 type Row = Record<string, unknown>;
 
 export class TestDatabase {
   constructor(private readonly pg: PGlite) {}
+
+  /** Runs a whole SQL script as the database owner. */
+  async exec(sql: string): Promise<void> {
+    await this.pg.exec("reset role; select set_config('request.jwt.claim.sub', '', false);");
+    await this.pg.exec(sql);
+  }
 
   /** Runs SQL as the database owner: no Row Level Security. For test setup. */
   async admin<T extends Row = Row>(sql: string, params: unknown[] = []): Promise<T[]> {
