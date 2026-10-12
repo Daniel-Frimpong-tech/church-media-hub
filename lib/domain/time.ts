@@ -119,3 +119,39 @@ const UPCOMING_GRACE_MS = 4 * 60 * 60 * 1000;
 export function upcomingCutoff(now: Date = new Date()): string {
   return new Date(now.getTime() - UPCOMING_GRACE_MS).toISOString();
 }
+
+/** The current time. Server Components call this rather than `new Date()` directly. */
+export function currentTime(): Date {
+  return new Date();
+}
+
+/** "10:00", the 24-hour clock time in the church's zone, for time inputs. */
+export function churchClockTime(instant: Date | string): string {
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: CHURCH_TIME_ZONE,
+    hourCycle: "h23",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).formatToParts(new Date(instant));
+  const get = (type: string) => parts.find((part) => part.type === type)?.value ?? "00";
+  return `${get("hour")}:${get("minute")}`;
+}
+
+/** "Mon, Oct 13, 10:00 AM", for deadlines. */
+export function formatChurchDateTime(instant: Date | string): string {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: CHURCH_TIME_ZONE,
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(instant));
+}
+
+const RECENT_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
+
+/** Services from the last two weeks onward are "current" for tasks and handoffs. */
+export function recentCutoff(now: Date = new Date()): string {
+  return new Date(now.getTime() - RECENT_WINDOW_MS).toISOString();
+}

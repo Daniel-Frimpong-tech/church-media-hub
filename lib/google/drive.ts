@@ -271,3 +271,25 @@ export async function removePermission(
     throw error;
   }
 }
+
+/** Renames a file or folder. */
+export async function renameFile(
+  accessToken: string,
+  fileId: string,
+  name: string,
+): Promise<void> {
+  await driveFetch(accessToken, `${FILES_URL}/${encodeURIComponent(fileId)}?fields=id`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name }),
+  });
+}
+
+/** Moves a file or folder to the Drive bin, where it can be restored for 30 days. */
+export async function moveToBin(accessToken: string, fileId: string): Promise<void> {
+  await driveFetch(accessToken, `${FILES_URL}/${encodeURIComponent(fileId)}?fields=id`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ trashed: true }),
+  });
+}
