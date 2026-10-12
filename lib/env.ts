@@ -24,3 +24,21 @@ export function supabasePublishableKey(): string {
     "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
   );
 }
+
+// ── Server-only values. Never import these into a Client Component. ──────────
+
+export function supabaseSecretKey(): string {
+  return required(process.env.SUPABASE_SECRET_KEY, "SUPABASE_SECRET_KEY");
+}
+
+export function googleClientId(): string {
+  return required(process.env.GOOGLE_CLIENT_ID, "GOOGLE_CLIENT_ID");
+}
+
+export function googleClientSecret(): string {
+  return required(process.env.GOOGLE_CLIENT_SECRET, "GOOGLE_CLIENT_SECRET");
+}
+
+export function tokenEncryptionKey(): string {
+  return required(process.env.TOKEN_ENCRYPTION_KEY, "TOKEN_ENCRYPTION_KEY");
+}

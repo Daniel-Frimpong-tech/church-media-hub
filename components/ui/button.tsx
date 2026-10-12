@@ -29,6 +29,15 @@ export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
   size?: Size;
 };
 
+/** The same look for a link, e.g. <Link className={buttonClasses()} />. */
+export function buttonClasses(
+  variant: Variant = "primary",
+  size: Size = "md",
+  className?: string,
+): string {
+  return cn(base, variants[variant], sizes[size], className);
+}
+
 export function Button({
   variant = "primary",
   size = "md",
@@ -39,7 +48,7 @@ export function Button({
   return (
     <button
       type={type}
-      className={cn(base, variants[variant], sizes[size], className)}
+      className={buttonClasses(variant, size, className)}
       {...props}
     />
   );
