@@ -7,7 +7,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
   const profile = await requireProfile();
 
   const items: NavItem[] = [
-    { href: "/dashboard", label: "Dashboard" },
+    { href: "/dashboard", label: "Home" },
     { href: "/services", label: "Services" },
     { href: "/gallery", label: "Gallery" },
     { href: "/handoffs", label: "Handoffs" },
