@@ -273,14 +273,15 @@ export class UploadQueue {
         return id;
       }
       // 308 is Google's "got that piece, send the next one".
-      if (result && result.status === 308) {
+      if (result && result.status === 308 && !chunk.isLast) {
         job.offset = chunk.end;
         attempts = 0;
         this.update(item.id, { sentBytes: job.offset });
         continue;
       }
 
-      // Anything else: wait a little, then ask how much Google really has.
+      // Anything else, including a 308 on the final piece (Google kept less
+      // than we sent): ask how much Google really has, then carry on from there.
       attempts += 1;
       if (attempts >= MAX_ATTEMPTS) {
         throw new UploadFailure(
@@ -288,7 +289,10 @@ export class UploadQueue {
           true,
         );
       }
-      await wait(1000 * 2 ** (attempts - 1));
+      // No need to wait if Google answered; back off if the network failed.
+      if (!result || result.status !== 308) {
+        await wait(1000 * 2 ** (attempts - 1));
+      }
 
       try {
         const progress = await postJson<

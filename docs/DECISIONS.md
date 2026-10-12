@@ -238,3 +238,75 @@ and time and convert with `churchLocalToUtc`; every display formats back to
 **Why:** Vercel's servers run in UTC and a volunteer's phone could be in any
 zone. Converting explicitly, with tests on both daylight-saving changeovers,
 means "10:00" always means 10am at church.
+
+## Phase 3: Uploads
+
+### Files go from the phone straight to Google
+
+**Choice:** Uploading is three steps. (1) The browser asks our server to start
+an upload; the server uses the church account's token to open a Drive
+"resumable upload session" and returns the session link. (2) The browser sends
+the file's bytes directly to that link at Google. (3) The browser tells our
+server the upload finished, and the server records it.
+
+**Why:** Vercel limits request bodies to a few megabytes, far below a phone
+video, so the bytes cannot pass through our server. The session link is safe to
+hand to the browser: it works for that one file in that one folder and nothing
+else, and the church account's real token never leaves the server. The server
+passes the browser's origin when opening the session, which is what makes Google
+accept the browser's cross-origin requests. This was tested against Google
+before building on it.
+
+### The server confirms every upload with Google
+
+**Choice:** When the browser reports "done, the file ID is X", the server asks
+Google whether X exists, is not in the bin, and sits in the folder that upload
+was meant for. Only then is the row marked complete. Signed-in users have no
+database permission to update upload rows at all; the server does it with the
+secret key after that check.
+
+**Why:** The upload record is the team's source of truth for who delivered
+what. If the browser's word were enough, a bug or a tampered request could mark
+files as delivered that do not exist, or attach someone else's file.
+
+### 8 MB chunks, with resume
+
+**Choice:** Files are sent in 8 MB pieces. If a piece fails, the app waits a
+moment, asks Google (through our server) how many bytes it actually has, and
+continues from there. After four failed tries in a row the file is marked
+failed with a Retry button, and retrying continues the same session.
+
+**Why:** Uploads happen on phones on church wifi or mobile data right after a
+service. A dropped connection should cost a few megabytes, not a whole video.
+The "ask through our server" step exists because Google does not let browsers
+read the header that says how much it has stored.
+
+### The upload queue is a plain class, not React state
+
+**Choice:** `lib/uploads/queue.ts` is an ordinary TypeScript class. The upload
+screen subscribes to it with `useSyncExternalStore` and draws whatever it
+reports.
+
+**Why:** Uploads are long-running work that must not restart or stall because a
+component re-rendered. Keeping them outside React makes that impossible by
+construction, and lets the resume logic be unit tested with scripted fake
+network replies.
+
+### `category_teams` added now, used fully in phase 5
+
+**Choice:** The table mapping categories to receiving teams (with a deadline in
+hours) is created in this phase.
+
+**Why:** The rule for which uploads a viewer may see depends on it, and that
+rule belongs in the uploads table's security policy from day one. Admin screens
+for the mapping and the deadline logic come with handoffs in phase 5. Until
+then no viewer can see any upload, which is the safe default.
+
+### Accepted file types
+
+**Choice:** Anything the browser reports as `image/*` or `video/*`, plus a list
+of known extensions (HEIC, camera raw formats, MOV and so on) for when the phone
+reports no type. Up to 20 GB per file.
+
+**Why:** iPhones often report no type for HEIC photos, and the team's cameras
+produce raw files. Rejecting those would push people back to uploading by hand.
