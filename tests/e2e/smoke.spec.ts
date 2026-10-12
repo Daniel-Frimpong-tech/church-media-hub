@@ -38,8 +38,8 @@ test("the Telegram webhook accepts calls with the secret", async ({ request }) =
 });
 
 test("scheduled-job endpoints reject calls without the secret", async ({ request }) => {
-  expect((await request.post("/api/cron/notifications")).status()).toBe(401);
-  const wrong = await request.post("/api/cron/notifications", {
+  expect((await request.post("/api/cron/run")).status()).toBe(401);
+  const wrong = await request.post("/api/cron/run", {
     headers: { Authorization: "Bearer not-the-secret" },
   });
   expect(wrong.status()).toBe(401);

@@ -71,3 +71,34 @@ export async function revokeDriveGrants(profileId: string): Promise<void> {
     console.error(`Removing Drive access for ${profileId} did not finish`, error);
   }
 }
+
+/**
+ * Finishes any Drive access removals that could not be completed earlier
+ * (Google was unreachable at the time). Returns how many were removed.
+ */
+export async function retryPendingRevocations(): Promise<number> {
+  const admin = createAdminClient();
+  const { data: pending } = await admin
+    .from("drive_grants")
+    .select("profile_id, drive_folder_id, permission_id")
+    .not("revoke_requested_at", "is", null)
+    .limit(100);
+  if (!pending || pending.length === 0) return 0;
+
+  const { accessToken } = await getDriveSession();
+  let removed = 0;
+  for (const grant of pending) {
+    try {
+      await removePermission(accessToken, grant.drive_folder_id, grant.permission_id);
+      await admin
+        .from("drive_grants")
+        .delete()
+        .eq("profile_id", grant.profile_id)
+        .eq("drive_folder_id", grant.drive_folder_id);
+      removed += 1;
+    } catch (error) {
+      console.error("Removing Drive access still failing", error);
+    }
+  }
+  return removed;
+}
