@@ -2,81 +2,150 @@
 
 /*
  * Design tokens. Source of truth is docs/DESIGN.md.
- * Build UI from these utilities (bg-canvas, text-ink, rounded-md, shadow-float…)
- * rather than raw hex values or Tailwind's default palette.
+ *
+ * A dark, content-first interface: every surface is a shade of charcoal so the
+ * photos supply the colour. Build UI from these utilities (bg-canvas,
+ * bg-surface, text-ink, rounded-md…) rather than raw hex values or Tailwind's
+ * default palette.
  */
 @theme {
-  /* Brand accent: used sparingly, one or two moments per screen */
-  --color-primary: #4338ca;
-  --color-primary-active: #3730a3;
-  --color-primary-soft: #eef0ff;
-  --color-primary-disabled: #c7cbf5;
-  --color-on-primary: #ffffff;
-
-  /* Text */
-  --color-ink: #222222;
-  --color-ink-soft: #3f3f3f;
-  --color-muted: #6a6a6a;
-  --color-muted-soft: #929292;
-
-  /* Surfaces */
-  --color-canvas: #ffffff;
-  --color-surface-soft: #f7f7f7;
-  --color-surface-strong: #f2f2f2;
+  /* Surfaces, darkest to lightest. Depth comes from stepping up this ladder. */
+  --color-canvas: #101012;
+  --color-surface: #18181b;
+  --color-surface-soft: #1f1f23;
+  --color-surface-strong: #2a2a30;
+  --color-surface-hover: #32323a;
   --color-scrim: #000000;
 
+  /* Text */
+  --color-ink: #ffffff;
+  --color-ink-soft: #d4d4d8;
+  --color-muted: #a1a1aa;
+  --color-muted-soft: #71717a;
+
   /* Lines */
-  --color-hairline: #dddddd;
-  --color-hairline-soft: #ebebeb;
-  --color-border-strong: #c1c1c1;
+  --color-hairline: #2e2e35;
+  --color-hairline-soft: #232328;
+  --color-border-strong: #52525b;
 
-  /* Status: handoffs, uploads, connection health */
-  --color-success: #1a7f4b;
-  --color-success-soft: #e6f4ec;
-  --color-warning: #8a5300;
-  --color-warning-soft: #fdf1dc;
-  --color-danger: #c13515;
-  --color-danger-soft: #fdecea;
+  /* Accent: the one colour that is ours. Used for the main action on a
+     screen, the active nav item and data marks. Dark text sits on it. */
+  --color-primary: #9d8cff;
+  --color-primary-active: #b3a6ff;
+  --color-primary-soft: rgb(157 140 255 / 0.16);
+  --color-primary-disabled: #4a4470;
+  --color-on-primary: #14121f;
 
-  /* Shape: everything interactive is rounded */
+  /* Status: always shown with a word, never colour alone. */
+  --color-success: #4ade80;
+  --color-success-soft: rgb(74 222 128 / 0.14);
+  --color-warning: #fbbf24;
+  --color-warning-soft: rgb(251 191 36 / 0.14);
+  --color-danger: #fb7185;
+  --color-danger-soft: rgb(251 113 133 / 0.14);
+
+  /* Shape: pills for anything you press, soft corners for anything you read. */
   --radius-xs: 4px;
-  --radius-sm: 8px;
-  --radius-md: 14px;
-  --radius-lg: 20px;
-  --radius-xl: 32px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
 
-  /* One shadow tier only: menus, sheets, floating bars */
-  --shadow-float:
-    0 0 0 1px rgb(0 0 0 / 0.02), 0 2px 6px 0 rgb(0 0 0 / 0.04),
-    0 4px 8px 0 rgb(0 0 0 / 0.1);
+  /* Elevation: heavy, soft shadows for things that float over content. */
+  --shadow-float: 0 8px 24px rgb(0 0 0 / 0.5);
+  --shadow-card: 0 8px 16px rgb(0 0 0 / 0.3);
 
-  /* Type: modest weights, photos carry the visual weight */
-  --font-sans: var(--font-geist-sans), -apple-system, system-ui, sans-serif;
+  /* Type: bold or regular, little in between. */
+  --font-sans: var(--font-figtree), -apple-system, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 
-  --text-display: 1.75rem;
-  --text-display--line-height: 1.25;
-  --text-display--font-weight: 700;
+  --text-hero: 2.5rem;
+  --text-hero--line-height: 1.05;
+  --text-hero--letter-spacing: -0.03em;
+  --text-hero--font-weight: 800;
+  --text-display: 1.875rem;
+  --text-display--line-height: 1.15;
+  --text-display--letter-spacing: -0.02em;
+  --text-display--font-weight: 800;
   --text-title-lg: 1.375rem;
   --text-title-lg--line-height: 1.2;
-  --text-title-lg--letter-spacing: -0.02em;
-  --text-title-lg--font-weight: 600;
+  --text-title-lg--letter-spacing: -0.01em;
+  --text-title-lg--font-weight: 700;
   --text-title: 1rem;
-  --text-title--line-height: 1.25;
-  --text-title--font-weight: 600;
+  --text-title--line-height: 1.3;
+  --text-title--font-weight: 700;
   --text-body: 1rem;
   --text-body--line-height: 1.5;
   --text-body-sm: 0.875rem;
-  --text-body-sm--line-height: 1.43;
+  --text-body-sm--line-height: 1.45;
   --text-caption: 0.8125rem;
-  --text-caption--line-height: 1.25;
+  --text-caption--line-height: 1.3;
   --text-badge: 0.6875rem;
   --text-badge--line-height: 1.2;
-  --text-badge--font-weight: 600;
+  --text-badge--font-weight: 700;
+  --text-label: 0.6875rem;
+  --text-label--line-height: 1.2;
+  --text-label--letter-spacing: 0.1em;
+  --text-label--font-weight: 700;
 
-  /* Breakpoints from the design system: 1-up, 2-up, 4-up grids */
+  /* Breakpoints: phone, tablet (two columns), desktop (sidebar appears). */
   --breakpoint-tablet: 744px;
-  --breakpoint-desktop: 1128px;
+  --breakpoint-desktop: 1100px;
+
+  /* Motion */
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-rise: rise 0.5s var(--ease-out-soft) both;
+  --animate-fade: fade 0.4s ease-out both;
+  --animate-grow-x: grow-x 0.8s var(--ease-out-soft) both;
+  --animate-grow-y: grow-y 0.8s var(--ease-out-soft) both;
+  --animate-shimmer: shimmer 1.6s linear infinite;
+
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  @keyframes grow-x {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(1);
+    }
+  }
+  @keyframes grow-y {
+    from {
+      transform: scaleY(0);
+    }
+    to {
+      transform: scaleY(1);
+    }
+  }
+  @keyframes shimmer {
+    from {
+      background-position: 200% 0;
+    }
+    to {
+      background-position: -200% 0;
+    }
+  }
+}
+
+html {
+  color-scheme: dark;
 }
 
 body {
@@ -89,4 +158,49 @@ body {
 :focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
+}
+
+/* Native form controls and scrollbars follow the dark theme */
+::selection {
+  background: rgb(157 140 255 / 0.35);
+}
+
+/* Horizontal rails scroll without a visible scrollbar */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Lets several entrance animations start one after another */
+.stagger > * {
+  animation: rise 0.5s var(--ease-out-soft) both;
+}
+.stagger > *:nth-child(2) {
+  animation-delay: 60ms;
+}
+.stagger > *:nth-child(3) {
+  animation-delay: 120ms;
+}
+.stagger > *:nth-child(4) {
+  animation-delay: 180ms;
+}
+.stagger > *:nth-child(5) {
+  animation-delay: 240ms;
+}
+.stagger > *:nth-child(n + 6) {
+  animation-delay: 300ms;
+}
+
+/* People who ask for less motion get none */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
