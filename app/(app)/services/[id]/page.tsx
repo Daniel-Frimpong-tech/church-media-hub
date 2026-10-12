@@ -34,9 +34,9 @@ export default async function ServicePage({
   if (!service.data) notFound();
 
   const canManage = can(profile.role, "manage_services");
-  const withFolder = new Set(folders.data.map((row) => row.category_id));
+  const withFolder = new Set((folders.data ?? []).map((row) => row.category_id));
   // Show active categories, plus retired ones this service already has.
-  const shown = categories.data.filter(
+  const shown = (categories.data ?? []).filter(
     (category) => category.is_active || withFolder.has(category.id),
   );
   const missing = shown.filter(

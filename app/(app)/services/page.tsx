@@ -32,6 +32,8 @@ export default async function ServicesPage() {
   const failed = upcoming.error ?? past.error;
   if (failed) throw new Error(`Could not load services: ${failed.message}`);
 
+  const upcomingServices = upcoming.data ?? [];
+  const pastServices = past.data ?? [];
   const canManage = can(profile.role, "manage_services");
 
   return (
@@ -47,21 +49,21 @@ export default async function ServicesPage() {
 
       <section className="flex flex-col gap-3">
         <h2 className="text-title-lg text-ink">Upcoming</h2>
-        {upcoming.data.length === 0 ? (
+        {upcomingServices.length === 0 ? (
           <p className="text-body-sm text-muted">
             {canManage
               ? "No upcoming services. Create the next one to set up its folders."
               : "No upcoming services yet."}
           </p>
         ) : (
-          <ServiceList services={upcoming.data} />
+          <ServiceList services={upcomingServices} />
         )}
       </section>
 
-      {past.data.length > 0 ? (
+      {pastServices.length > 0 ? (
         <section className="flex flex-col gap-3">
           <h2 className="text-title-lg text-ink">Past</h2>
-          <ServiceList services={past.data} />
+          <ServiceList services={pastServices} />
         </section>
       ) : null}
     </div>
