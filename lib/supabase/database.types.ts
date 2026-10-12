@@ -20,12 +20,16 @@ export type Database = {
           role: AppRole;
           active: boolean;
           created_at: string;
+          telegram_user_id: number | null;
+          telegram_name: string | null;
         };
         Insert: never;
         Update: {
           full_name?: string;
           role?: AppRole;
           active?: boolean;
+          telegram_user_id?: number | null;
+          telegram_name?: string | null;
         };
         Relationships: [];
       };
@@ -249,6 +253,62 @@ export type Database = {
         Update: never;
         Relationships: [];
       };
+      // The next three are readable only with the secret key.
+      app_settings: {
+        Row: {
+          id: boolean;
+          telegram_chat_id: number | null;
+          telegram_chat_title: string | null;
+          telegram_linked_by: string | null;
+          telegram_linked_at: string | null;
+        };
+        Insert: never;
+        Update: {
+          telegram_chat_id?: number | null;
+          telegram_chat_title?: string | null;
+          telegram_linked_by?: string | null;
+          telegram_linked_at?: string | null;
+        };
+        Relationships: [];
+      };
+      telegram_link_tokens: {
+        Row: {
+          token_hash: string;
+          kind: "person" | "group";
+          telegram_user_id: number | null;
+          telegram_chat_id: number | null;
+          display_name: string;
+          expires_at: string;
+          used_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          token_hash: string;
+          kind: "person" | "group";
+          telegram_user_id?: number | null;
+          telegram_chat_id?: number | null;
+          display_name: string;
+          expires_at: string;
+        };
+        Update: { used_at?: string | null };
+        Relationships: [];
+      };
+      notification_log: {
+        Row: {
+          id: string;
+          kind: string;
+          dedupe_key: string;
+          service_id: string | null;
+          sent_at: string;
+        };
+        Insert: {
+          kind: string;
+          dedupe_key: string;
+          service_id?: string | null;
+        };
+        Update: never;
+        Relationships: [];
+      };
       // Readable only with the secret key. See lib/google/grants.ts.
       drive_grants: {
         Row: {
@@ -322,6 +382,7 @@ export type Database = {
       google_connection_status: GoogleConnectionStatus;
       upload_status: UploadStatus;
       upload_source: UploadSource;
+      telegram_link_kind: "person" | "group";
     };
     CompositeTypes: { [_ in never]: never };
   };
