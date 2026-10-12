@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { isRole, normalizeEmail } from "@/lib/domain/roles";
+import { revokeDriveGrants } from "@/lib/google/grants";
 import type { FormState } from "@/lib/form-state";
 import { createClient } from "@/lib/supabase/server";
 
@@ -102,6 +103,10 @@ export async function updatePerson(
     }
     return { error: GENERIC_ERROR };
   }
+
+  // Their Drive folder access was based on the old role. Remove it; whatever
+  // they are still allowed is granted again when they next open a file.
+  await revokeDriveGrants(id);
 
   revalidatePath("/admin/people");
   if ("role" in update) return { success: "Role saved." };

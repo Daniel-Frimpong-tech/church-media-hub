@@ -189,6 +189,35 @@ export type Database = {
           status?: UploadStatus;
           completed_at?: string | null;
         };
+        Relationships: [
+          {
+            foreignKeyName: "uploads_service_id_fkey";
+            columns: ["service_id"];
+            isOneToOne: false;
+            referencedRelation: "services";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      // Readable only with the secret key. See lib/google/grants.ts.
+      drive_grants: {
+        Row: {
+          profile_id: string;
+          drive_folder_id: string;
+          permission_id: string;
+          created_at: string;
+          revoke_requested_at: string | null;
+        };
+        Insert: {
+          profile_id: string;
+          drive_folder_id: string;
+          permission_id: string;
+          revoke_requested_at?: string | null;
+        };
+        Update: {
+          permission_id?: string;
+          revoke_requested_at?: string | null;
+        };
         Relationships: [];
       };
       // Readable only with the secret key. See lib/google/connection.ts.

@@ -188,3 +188,86 @@ export async function getFile(
     throw error;
   }
 }
+
+/**
+ * A short-lived link to Google's preview image for a file, or null if Google
+ * has not made one (yet). `size` is the longest edge in pixels.
+ */
+export async function getThumbnailLink(
+  accessToken: string,
+  fileId: string,
+): Promise<string | null> {
+  try {
+    const response = await driveFetch(
+      accessToken,
+      `${FILES_URL}/${encodeURIComponent(fileId)}?fields=thumbnailLink`,
+      { method: "GET" },
+    );
+    const { thumbnailLink } = (await response.json()) as {
+      thumbnailLink?: string;
+    };
+    return thumbnailLink ?? null;
+  } catch (error) {
+    if (error instanceof DriveError && error.status === 404) return null;
+    throw error;
+  }
+}
+
+/** Google's thumbnail links end in "=s220"; swapping the number resizes. */
+export function sizedThumbnailLink(link: string, size: number): string {
+  return /=s\d+$/.test(link)
+    ? link.replace(/=s\d+$/, `=s${size}`)
+    : `${link}=s${size}`;
+}
+
+/** Streams a file's original bytes. The caller forwards the body. */
+export async function downloadFile(
+  accessToken: string,
+  fileId: string,
+): Promise<Response> {
+  return driveFetch(
+    accessToken,
+    `${FILES_URL}/${encodeURIComponent(fileId)}?alt=media`,
+    { method: "GET" },
+  );
+}
+
+/**
+ * Gives one Google account read access to a file or folder, without Google
+ * emailing them about it. Returns the permission ID needed to remove it.
+ */
+export async function grantReader(
+  accessToken: string,
+  fileId: string,
+  email: string,
+): Promise<string> {
+  const response = await driveFetch(
+    accessToken,
+    `${FILES_URL}/${encodeURIComponent(fileId)}/permissions?sendNotificationEmail=false&fields=id`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "user", role: "reader", emailAddress: email }),
+    },
+  );
+  const { id } = (await response.json()) as { id: string };
+  return id;
+}
+
+/** Removes a permission. Already gone counts as success. */
+export async function removePermission(
+  accessToken: string,
+  fileId: string,
+  permissionId: string,
+): Promise<void> {
+  try {
+    await driveFetch(
+      accessToken,
+      `${FILES_URL}/${encodeURIComponent(fileId)}/permissions/${encodeURIComponent(permissionId)}`,
+      { method: "DELETE" },
+    );
+  } catch (error) {
+    if (error instanceof DriveError && error.status === 404) return;
+    throw error;
+  }
+}

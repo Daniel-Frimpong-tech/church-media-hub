@@ -76,20 +76,28 @@ export async function ensureServiceFolders(
     }
 
     const done = new Set((existing.data ?? []).map((row) => row.category_id));
-    for (const category of categories.data ?? []) {
-      if (done.has(category.id)) continue;
-      const folderId = await createFolder(
-        accessToken,
-        category.name,
-        serviceFolderId,
-      );
-      const saved = await supabase.from("service_folders").insert({
-        service_id: serviceId,
-        category_id: category.id,
-        drive_folder_id: folderId,
-      });
-      if (saved.error) throw new Error(saved.error.message);
-    }
+    const missing = (categories.data ?? []).filter(
+      (category) => !done.has(category.id),
+    );
+    // Created side by side: one folder failing does not undo the others, and
+    // each ID is saved as soon as it exists so a retry only makes the rest.
+    const results = await Promise.allSettled(
+      missing.map(async (category) => {
+        const folderId = await createFolder(
+          accessToken,
+          category.name,
+          serviceFolderId,
+        );
+        const saved = await supabase.from("service_folders").insert({
+          service_id: serviceId,
+          category_id: category.id,
+          drive_folder_id: folderId,
+        });
+        if (saved.error) throw new Error(saved.error.message);
+      }),
+    );
+    const failure = results.find((result) => result.status === "rejected");
+    if (failure) throw failure.reason;
 
     await supabase
       .from("services")

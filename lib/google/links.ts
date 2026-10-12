@@ -2,3 +2,8 @@
 export function driveFolderUrl(folderId: string): string {
   return `https://drive.google.com/drive/folders/${encodeURIComponent(folderId)}`;
 }
+
+/** Link that opens a file in Google Drive's own viewer (plays videos). */
+export function driveFileViewUrl(fileId: string): string {
+  return `https://drive.google.com/file/d/${encodeURIComponent(fileId)}/view`;
+}
