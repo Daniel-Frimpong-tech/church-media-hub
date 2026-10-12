@@ -310,3 +310,75 @@ reports no type. Up to 20 GB per file.
 
 **Why:** iPhones often report no type for HEIC photos, and the team's cameras
 produce raw files. Rejecting those would push people back to uploading by hand.
+
+## Phase 4: Gallery and search
+
+### Thumbnails are fetched by our server, for people allowed to see them
+
+**Choice:** The grid loads images from `/api/thumb/<upload id>`. That route
+looks the upload up as the signed-in user (so Row Level Security decides whether
+it exists for them), asks Drive for the file's preview link, fetches the image
+and passes it on. Two sizes are served: 400px for the grid, 1600px for the
+full-size view.
+
+**Why:** Drive files are private to the church account, so a browser cannot
+load them from Google directly. Going through our route also means the same
+access rules apply to images as to everything else.
+
+### Thumbnail caching is `private`, in the browser
+
+**Choice:** Thumbnails are sent with `Cache-Control: private, max-age=86400`.
+The server also remembers each file's preview link for ten minutes.
+
+**Why:** `private` lets each person's browser keep an image for a day, so
+scrolling back through an album is instant and costs nothing. It must not be
+`public`: a shared cache could hand one person's permitted image to someone
+who is not allowed to see it. The ten-minute memory saves a Drive call when the
+grid image and the full-size image of the same photo are requested together.
+
+### Plain `<img>`, not `next/image`
+
+**Choice:** Gallery images use a normal `<img>` tag.
+
+**Why:** `next/image` would send every thumbnail through Vercel's image
+optimiser, which has a small free monthly allowance. Google already resizes the
+image to the size we ask for, so there is nothing left for it to do.
+
+### Small originals download through the app; large ones open in Drive
+
+**Choice:** Files up to 50 MB (photos) are streamed through the app as a
+download. Anything larger (videos) is opened in Google Drive instead: the app
+gives that person's own Google account read access to the one category folder,
+records the grant, and redirects them to the file in Drive.
+
+**Why:** Vercel's free plan includes a limited amount of data transfer each
+month. Photos are small enough to pass through it comfortably, and downloading
+inside the app is the smoothest experience for the thumbnail team. A few
+multi-gigabyte videos would use the allowance up, so those bytes go from Google
+straight to the person. The cost is a second thing to keep correct, which is the
+next decision.
+
+### Drive access is granted lazily and removed on any access change
+
+**Choice:** A Drive folder is shared with a person only at the moment they open
+a large file in it, and only after Row Level Security has confirmed they may see
+that category. Every grant is recorded in `drive_grants`. When an admin changes
+someone's role, turns their access off, or changes their team, all of that
+person's grants are removed; anything they are still entitled to is granted
+again the next time they open it.
+
+**Why:** Sharing folders with everyone up front would create thousands of
+permissions that must all be kept in step with roles and teams. Granting on
+demand keeps the number small, and "remove everything, re-grant on demand" is
+one simple rule that cannot leave stale access behind. A removal that fails
+(Google unreachable) stays marked in the table so the scheduled job in phase 7
+can finish it.
+
+### Search filters by the service's date
+
+**Choice:** The gallery's date range filters on when the service took place, in
+Pacific time, not on when the file was uploaded.
+
+**Why:** "Baptism, May 2025" means photos of baptisms held in May, even if
+someone uploaded them in June. The range covers whole days in the church's time
+zone, so an evening service on the last day is included.

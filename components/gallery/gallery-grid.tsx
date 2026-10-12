@@ -116,7 +116,7 @@ function Lightbox({
       ref={dialogRef}
       onClose={onClose}
       aria-label={item.fileName}
-      className="m-0 h-dvh max-h-none w-screen max-w-none bg-ink text-canvas backdrop:bg-scrim"
+      className="m-0 h-dvh max-h-none w-screen max-w-none border-0 bg-ink p-0 text-canvas backdrop:bg-scrim"
     >
       <div className="flex h-full flex-col">
         <div className="flex items-center justify-between gap-3 p-3">
