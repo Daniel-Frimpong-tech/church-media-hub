@@ -10,6 +10,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
     { href: "/dashboard", label: "Dashboard" },
     { href: "/services", label: "Services" },
     { href: "/gallery", label: "Gallery" },
+    { href: "/handoffs", label: "Handoffs" },
   ];
   if (profile.role === "admin") {
     items.push({ href: "/admin", label: "Admin" });
