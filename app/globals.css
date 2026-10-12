@@ -1,26 +1,92 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/*
+ * Design tokens. Source of truth is docs/DESIGN.md.
+ * Build UI from these utilities (bg-canvas, text-ink, rounded-md, shadow-float…)
+ * rather than raw hex values or Tailwind's default palette.
+ */
+@theme {
+  /* Brand accent: used sparingly, one or two moments per screen */
+  --color-primary: #4338ca;
+  --color-primary-active: #3730a3;
+  --color-primary-soft: #eef0ff;
+  --color-primary-disabled: #c7cbf5;
+  --color-on-primary: #ffffff;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  /* Text */
+  --color-ink: #222222;
+  --color-ink-soft: #3f3f3f;
+  --color-muted: #6a6a6a;
+  --color-muted-soft: #929292;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* Surfaces */
+  --color-canvas: #ffffff;
+  --color-surface-soft: #f7f7f7;
+  --color-surface-strong: #f2f2f2;
+  --color-scrim: #000000;
+
+  /* Lines */
+  --color-hairline: #dddddd;
+  --color-hairline-soft: #ebebeb;
+  --color-border-strong: #c1c1c1;
+
+  /* Status: handoffs, uploads, connection health */
+  --color-success: #1a7f4b;
+  --color-success-soft: #e6f4ec;
+  --color-warning: #8a5300;
+  --color-warning-soft: #fdf1dc;
+  --color-danger: #c13515;
+  --color-danger-soft: #fdecea;
+
+  /* Shape: everything interactive is rounded */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-xl: 32px;
+
+  /* One shadow tier only: menus, sheets, floating bars */
+  --shadow-float:
+    0 0 0 1px rgb(0 0 0 / 0.02), 0 2px 6px 0 rgb(0 0 0 / 0.04),
+    0 4px 8px 0 rgb(0 0 0 / 0.1);
+
+  /* Type: modest weights, photos carry the visual weight */
+  --font-sans: var(--font-geist-sans), -apple-system, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --text-display: 1.75rem;
+  --text-display--line-height: 1.25;
+  --text-display--font-weight: 700;
+  --text-title-lg: 1.375rem;
+  --text-title-lg--line-height: 1.2;
+  --text-title-lg--letter-spacing: -0.02em;
+  --text-title-lg--font-weight: 600;
+  --text-title: 1rem;
+  --text-title--line-height: 1.25;
+  --text-title--font-weight: 600;
+  --text-body: 1rem;
+  --text-body--line-height: 1.5;
+  --text-body-sm: 0.875rem;
+  --text-body-sm--line-height: 1.43;
+  --text-caption: 0.8125rem;
+  --text-caption--line-height: 1.25;
+  --text-badge: 0.6875rem;
+  --text-badge--line-height: 1.2;
+  --text-badge--font-weight: 600;
+
+  /* Breakpoints from the design system: 1-up, 2-up, 4-up grids */
+  --breakpoint-tablet: 744px;
+  --breakpoint-desktop: 1128px;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+}
+
+/* Visible keyboard focus everywhere, in the accent colour */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
