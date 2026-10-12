@@ -21,6 +21,11 @@ const SECTIONS = [
     body: "The folders every service gets, such as Baptism and Preacher.",
   },
   {
+    href: "/admin/schedule",
+    title: "Schedule",
+    body: "Services that repeat every week, and the automatic jobs.",
+  },
+  {
     href: "/admin/google",
     title: "Google Drive",
     body: "The church Google account where photos and videos are stored.",

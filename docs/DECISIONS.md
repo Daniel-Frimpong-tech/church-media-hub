@@ -552,3 +552,79 @@ login page but answers `/api/` calls with a JSON 401.
 login page arriving as a "successful" reply is confusing: an upload whose
 session expired midway would have failed with a meaningless error instead of
 "you have been signed out".
+
+## Phase 7: Scheduled jobs and recurring services
+
+### Supabase `pg_cron` every 15 minutes, Vercel Cron once a day as backup
+
+**Choice:** Postgres itself, through the `pg_cron` and `pg_net` extensions,
+calls the app's `/api/cron/run` every 15 minutes. `vercel.json` also schedules
+the same address once a day.
+
+**Why:** The three free options were compared against what the app needs.
+Reminders are due 3 and 20 hours after a service and late alerts when a deadline
+passes, so the timer has to tick at least a few times an hour.
+
+- **Vercel Cron (Hobby):** runs at most once a day, at an unpredictable minute
+  within the hour. Fine for creating next week's service, far too coarse for
+  reminders.
+- **GitHub Actions schedule:** free, but runs are often delayed by many minutes
+  at busy times and GitHub disables schedules on repositories with no recent
+  activity.
+- **Supabase `pg_cron`:** runs inside the database the project already has, to
+  the minute, for free.
+
+Using both costs nothing. The daily Vercel run means a stopped or misconfigured
+Supabase schedule degrades the app (things happen late) instead of breaking it
+(next Sunday's service never appears). It also touches the database every day,
+which keeps a free Supabase project from being paused for inactivity.
+
+### The schedule is set up by hand, not in a migration
+
+**Choice:** The `cron.schedule` statement lives in
+[SCHEDULER.md](SCHEDULER.md) and is run once in the Supabase SQL editor.
+
+**Why:** It contains two things that do not belong in the repository: the live
+site's address and a reference to a secret. It also needs extensions that the
+in-process test database does not have, so putting it in a migration would
+break the database tests. The secret itself is stored in Supabase Vault, where
+it is encrypted, and read by the schedule at run time.
+
+### One endpoint, independent steps
+
+**Choice:** `/api/cron/run` runs every job in turn. Each step is wrapped so a
+failure in one (Google is down, say) is recorded and the others still run. The
+time and outcome of the last run are saved and shown on Admin → Schedule.
+
+**Why:** One address means one schedule and one secret to manage. The saved
+result turns a silent failure into something an admin can see: the page shows
+"Not running regularly" if two hours pass without a run.
+
+### Every job can be run twice safely
+
+**Choice:** Creating a recurring service relies on a unique index on
+(series, occurrence). Notifications rely on a unique key per message. Folder
+creation saves each folder as it is made.
+
+**Why:** Two schedulers call the same endpoint, an admin can press "Run now",
+and a slow run can overlap the next one. Rather than trying to prevent
+overlap, each job is written so that doing it again changes nothing.
+
+### A recurring service remembers which occurrence it is
+
+**Choice:** A service created from a schedule stores `series_slot`, the
+occurrence it was created for, separately from `starts_at`. Deleting such a
+service records a "skip" for that occurrence.
+
+**Why:** Without it, moving next Sunday's service from 10:00 to 11:00 would
+make the job think 10:00 was missing and create a second one, and deleting a
+cancelled service would see it reappear fifteen minutes later.
+
+### Recurrence is "weekday and time at church"
+
+**Choice:** A series stores a weekday and a wall-clock time. The actual instant
+is computed each week in `America/Los_Angeles`.
+
+**Why:** Storing "every 168 hours from a first date" would drift by an hour
+twice a year. "Sunday at 10:00" should mean 10am at church in both winter and
+summer, and the tests check the weeks either side of both clock changes.

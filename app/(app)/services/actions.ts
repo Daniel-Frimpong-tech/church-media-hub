@@ -156,9 +156,20 @@ export async function deleteService(
 
   const { data: service } = await supabase
     .from("services")
-    .select("drive_folder_id")
+    .select("drive_folder_id, series_id, series_slot")
     .eq("id", serviceId)
     .maybeSingle();
+
+  // If the weekly schedule created this service, remember that this
+  // occurrence was removed on purpose, or the next run would recreate it.
+  if (service?.series_id && service.series_slot) {
+    const skip = await supabase.from("service_series_skips").upsert({
+      series_id: service.series_id,
+      series_slot: service.series_slot,
+    });
+    if (skip.error) return { error: GENERIC_ERROR };
+  }
+
   const { error } = await supabase.from("services").delete().eq("id", serviceId);
   if (error) return { error: GENERIC_ERROR };
 
