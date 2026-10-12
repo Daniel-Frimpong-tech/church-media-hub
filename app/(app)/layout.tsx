@@ -9,6 +9,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
   const items: NavItem[] = [
     { href: "/dashboard", label: "Dashboard" },
     { href: "/services", label: "Services" },
+    { href: "/gallery", label: "Gallery" },
   ];
   if (profile.role === "admin") {
     items.push({ href: "/admin", label: "Admin" });

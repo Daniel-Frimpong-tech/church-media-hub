@@ -148,7 +148,16 @@ export default async function ServicePage({
               key={category.id}
               className="flex items-center justify-between gap-3 py-3"
             >
-              <span className="text-body text-ink">{category.name}</span>
+              {withFolder.has(category.id) ? (
+                <Link
+                  href={`/services/${id}/${category.slug}`}
+                  className="text-body font-medium text-primary underline"
+                >
+                  {category.name}
+                </Link>
+              ) : (
+                <span className="text-body text-ink">{category.name}</span>
+              )}
               {withFolder.has(category.id) ? (
                 <span className="text-body-sm text-muted tabular-nums">
                   {countByCategory.get(category.id) ?? 0}{" "}

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
+import { revokeDriveGrants } from "@/lib/google/grants";
 import type { FormState } from "@/lib/form-state";
 import type { TeamKind } from "@/lib/supabase/database.types";
 import { createClient } from "@/lib/supabase/server";
@@ -73,9 +74,18 @@ export async function manageTeam(
       .eq("team_id", teamId)
       .eq("profile_id", profileId);
     if (error) return { error: GENERIC_ERROR };
+    // Leaving a team can remove categories they could see in Drive.
+    await revokeDriveGrants(profileId);
   } else if (intent === "delete_team") {
+    const { data: members } = await supabase
+      .from("team_members")
+      .select("profile_id")
+      .eq("team_id", teamId);
     const { error } = await supabase.from("teams").delete().eq("id", teamId);
     if (error) return { error: GENERIC_ERROR };
+    await Promise.all(
+      (members ?? []).map((member) => revokeDriveGrants(member.profile_id)),
+    );
   } else {
     return { error: "Unknown action." };
   }
