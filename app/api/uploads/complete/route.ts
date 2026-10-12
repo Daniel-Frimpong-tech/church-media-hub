@@ -1,10 +1,11 @@
-import { NextResponse, type NextRequest } from "next/server";
+import { after, NextResponse, type NextRequest } from "next/server";
 import {
   getDriveSession,
   markGoogleConnectionExpired,
 } from "@/lib/google/connection";
 import { getFile } from "@/lib/google/drive";
 import { GoogleConnectionExpiredError } from "@/lib/google/oauth";
+import { sendDueNotifications } from "@/lib/notifications/telegram";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import {
@@ -93,6 +94,8 @@ export async function POST(request: NextRequest) {
       }
       throw new Error(error.message);
     }
+    // A first upload can make a category ready for its team.
+    after(() => sendDueNotifications());
     return NextResponse.json({ ok: true });
   } catch (error) {
     if (error instanceof GoogleConnectionExpiredError) {

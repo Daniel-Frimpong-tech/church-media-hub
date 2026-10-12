@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/browser";
 
-export function GoogleSignInButton() {
+export function GoogleSignInButton({ next }: { next?: string }) {
   const [pending, setPending] = useState(false);
   const [failed, setFailed] = useState(false);
 
@@ -14,7 +14,12 @@ export function GoogleSignInButton() {
     const supabase = createClient();
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: {
+        // The callback only honours paths inside this app.
+        redirectTo: `${window.location.origin}/auth/callback${
+          next ? `?next=${encodeURIComponent(next)}` : ""
+        }`,
+      },
     });
     // On success the browser leaves for Google, so only failure returns here.
     if (error) {

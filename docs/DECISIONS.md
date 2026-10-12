@@ -459,3 +459,96 @@ Its empty Drive folder goes to the Drive bin.
 
 **Why:** Upload records are the audit trail the team asked for. An accidental
 delete should not erase who delivered what, or orphan files in Drive.
+
+## Phase 6: Telegram bot
+
+### The webhook checks a secret header before anything else
+
+**Choice:** `/api/telegram/webhook` compares the
+`X-Telegram-Bot-Api-Secret-Token` header with `TELEGRAM_WEBHOOK_SECRET`, using a
+constant-time comparison, and answers 401 if it does not match. The secret is
+handed to Telegram once, when the webhook is registered.
+
+**Why:** The webhook URL is public, so anyone could post fake "messages" to it.
+The secret is the only thing proving a request came from Telegram. A
+constant-time comparison avoids leaking, through response timing, how much of a
+guessed secret was right. After that check the route always answers 200, because
+any other status makes Telegram re-deliver the same message repeatedly.
+
+### Linking accounts with one-time links and a Confirm button
+
+**Choice:** `/join` (in a private chat) and `/linkgroup` (in the group) make the
+bot reply with a link containing a random token. Opening it shows what will be
+connected and a Confirm button. The token works once, for 15 minutes, and only
+its SHA-256 hash is stored.
+
+**Why:** The bot knows a Telegram ID; the app knows a Google account; something
+must prove the same person holds both. Only someone who can read the bot's reply
+and sign in to the app can complete the link. `/join` is refused in groups,
+where another member could open the link and attach their app account to
+someone else's Telegram. The Confirm button matters because chat apps open
+links automatically to build previews, which would otherwise use the link up.
+Storing only the hash means a database leak does not expose working links.
+
+### Tagging by Telegram ID
+
+**Choice:** People are tagged with `<a href="tg://user?id=…">Name</a>` in
+HTML-format messages. Every name and title is escaped before it goes in.
+
+**Why:** `@username` tags only work for people who have set a username; the ID
+form notifies anyone. Escaping stops a service called `<b>Sunday` from breaking
+the message or injecting formatting.
+
+### Each message is sent once, enforced by the database
+
+**Choice:** Before sending, the app inserts a row into `notification_log` with a
+unique key such as `handoff_late:<id>`. If the insert fails because the key
+exists, the message was already sent and is skipped. If Telegram rejects the
+message, the row is removed so it is tried again later.
+
+**Why:** Notifications are triggered from several places (a scheduled job, and
+straight after uploads and task changes), possibly at the same moment. A unique
+key in the database is the one place that can guarantee "once" across all of
+them. Checking first and inserting afterwards would let two callers both see
+"not sent yet".
+
+### Notifications are a sweep, not events
+
+**Choice:** `sendDueNotifications` looks at current state and sends whatever is
+due: reminders whose time has come, handoffs that became ready, handoffs past
+their deadline. It runs after relevant actions and (from phase 7) on a schedule.
+
+**Why:** "Late" is caused by time passing, not by any action, so something has
+to look periodically anyway. Using the same sweep for everything means a
+message missed because Telegram was down is simply picked up on the next run.
+Nothing that fell due before the group was linked is sent, so switching Telegram
+on does not flood the group with old alerts.
+
+### Reminder timing
+
+**Choice:** Upload reminders go out 3 hours and 20 hours after a service starts,
+and only tag people with something outstanding. If nobody owes anything, nothing
+is posted.
+
+**Why:** Three hours gives people time to get home. Twenty hours lands before
+the usual 24-hour handoff deadline while there is still time to act. A reminder
+that tags people who already delivered teaches everyone to ignore the bot.
+
+### Telegram is optional
+
+**Choice:** With no bot token, or no linked group, every notification function
+quietly does nothing, and nothing a person does in the app waits on Telegram
+(messages are sent after the response using `after`).
+
+**Why:** The team's work must not stop because Telegram is slow, down, or not
+set up yet.
+
+### API routes answer 401 when signed out
+
+**Choice:** For signed-out requests, `proxy.ts` redirects page visits to the
+login page but answers `/api/` calls with a JSON 401.
+
+**Why:** A redirect is right for a person visiting a page. For a script, the
+login page arriving as a "successful" reply is confusing: an upload whose
+session expired midway would have failed with a meaningless error instead of
+"you have been signed out".

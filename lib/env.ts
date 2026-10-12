@@ -42,3 +42,23 @@ export function googleClientSecret(): string {
 export function tokenEncryptionKey(): string {
   return required(process.env.TOKEN_ENCRYPTION_KEY, "TOKEN_ENCRYPTION_KEY");
 }
+
+/** The app's public address, used for links in Telegram messages. */
+export function appUrl(): string {
+  return required(process.env.NEXT_PUBLIC_APP_URL, "NEXT_PUBLIC_APP_URL").replace(/\/+$/, "");
+}
+
+// Telegram and scheduled jobs are optional: the app works without them, so
+// these return null instead of throwing when they are not set.
+
+export function telegramBotToken(): string | null {
+  return process.env.TELEGRAM_BOT_TOKEN || null;
+}
+
+export function telegramWebhookSecret(): string | null {
+  return process.env.TELEGRAM_WEBHOOK_SECRET || null;
+}
+
+export function cronSecret(): string | null {
+  return process.env.CRON_SECRET || null;
+}

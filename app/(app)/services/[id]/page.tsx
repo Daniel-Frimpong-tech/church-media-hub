@@ -16,7 +16,7 @@ import { getGoogleConnectionSummary } from "@/lib/google/connection";
 import { driveFolderUrl } from "@/lib/google/links";
 import { describeHandoffs } from "@/lib/handoffs";
 import { createClient } from "@/lib/supabase/server";
-import { removeAssignment, setTaskDone } from "../actions";
+import { removeAssignment, sendReminderNow, setTaskDone } from "../actions";
 import { AddAssignmentForm } from "./add-assignment-form";
 import { RetryFolders } from "./retry-folders";
 
@@ -289,6 +289,15 @@ export default async function ServicePage({
               })}
             </ul>
           )}
+          {canManage && outstanding.size > 0 ? (
+            <ActionButton
+              action={sendReminderNow}
+              fields={{ service_id: id }}
+              label="Send reminder in Telegram now"
+              pendingLabel="Sending…"
+              className="self-start"
+            />
+          ) : null}
           {canManage ? (
             <details className="rounded-sm border border-hairline p-4">
               <summary className="cursor-pointer text-body-sm font-medium text-ink">

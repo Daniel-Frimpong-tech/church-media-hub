@@ -222,3 +222,32 @@ describe("uploads", () => {
     ).rejects.toThrow(/permission denied/);
   });
 });
+
+describe("server-only tables", () => {
+  it.each(["app_settings", "telegram_link_tokens", "notification_log", "drive_grants"])(
+    "%s cannot be read by anyone signed in, even an admin",
+    async (table) => {
+      await expect(db.as(admin, `select * from public.${table}`)).rejects.toThrow(
+        /permission denied/,
+      );
+    },
+  );
+
+  it("lets people see who has linked Telegram, but not link it themselves", async () => {
+    await db.admin("update public.profiles set telegram_user_id = 4242 where id = $1", [member]);
+    const [seen] = await db.as<{ telegram_user_id: string | null }>(
+      thumbnailViewer,
+      "select telegram_user_id from public.profiles where id = $1",
+      [member],
+    );
+    expect(Number(seen.telegram_user_id)).toBe(4242);
+
+    // A member's update to their own profile matches no rows: only admins may.
+    await db.as(member, "update public.profiles set telegram_user_id = 1 where id = $1", [member]);
+    const [after] = await db.admin<{ telegram_user_id: string }>(
+      "select telegram_user_id from public.profiles where id = $1",
+      [member],
+    );
+    expect(Number(after.telegram_user_id)).toBe(4242);
+  });
+});

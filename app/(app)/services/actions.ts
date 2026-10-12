@@ -2,11 +2,17 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { requireAdmin, requireProfile } from "@/lib/auth";
 import { churchLocalToUtc, serviceFolderName } from "@/lib/domain/time";
 import { getDriveSession } from "@/lib/google/connection";
 import { moveToBin, renameFile } from "@/lib/google/drive";
 import type { FormState } from "@/lib/form-state";
+import {
+  announceServiceCreated,
+  sendDueNotifications,
+  sendUploadReminder,
+} from "@/lib/notifications/telegram";
 import { ensureServiceFolders } from "@/lib/services/folders";
 import { createClient } from "@/lib/supabase/server";
 
@@ -40,7 +46,9 @@ export async function createService(
 
   // The service is saved either way. If Drive fails, the service page shows
   // why and offers a retry, so a Google hiccup never loses the service.
-  await ensureServiceFolders(supabase, service.id);
+  const folders = await ensureServiceFolders(supabase, service.id);
+  // Tell the team group, after the response so Telegram never slows this down.
+  if (folders.ok) after(() => announceServiceCreated(service.id));
 
   revalidatePath("/services");
   revalidatePath("/dashboard");
@@ -62,6 +70,7 @@ export async function retryServiceFolders(
   revalidatePath(`/services/${serviceId}`);
   revalidatePath("/services");
   if (!result.ok) return { error: result.message };
+  after(() => announceServiceCreated(serviceId));
   return { success: "Drive folders are ready." };
 }
 
@@ -263,8 +272,39 @@ export async function setTaskDone(
     };
   }
 
+  // Marking a task done can make a category ready for its team.
+  after(() => sendDueNotifications());
+
   if (serviceId) refreshService(serviceId);
   return {};
+}
+
+const REMINDER_OUTCOMES: Record<string, FormState> = {
+  sent: { success: "Reminder posted in the Telegram group." },
+  nothing_outstanding: { success: "Nobody has anything outstanding, so nothing was sent." },
+  not_linked: {
+    error: "Telegram is not set up yet. Finish the steps under Admin → Telegram.",
+  },
+  already_sent: { error: "Telegram did not accept the message. Try again in a minute." },
+  failed: { error: "Could not send the reminder. Try again." },
+};
+
+/** An admin presses "Send reminder now" on a service page. */
+export async function sendReminderNow(
+  _previous: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  await requireAdmin();
+  const serviceId = text(formData, "service_id");
+  if (!serviceId) return { error: "Service not found." };
+
+  // A fresh key each minute: pressing twice by accident sends once.
+  const minute = new Date().toISOString().slice(0, 16);
+  const outcome = await sendUploadReminder(
+    serviceId,
+    `upload_reminder:${serviceId}:manual:${minute}`,
+  );
+  return REMINDER_OUTCOMES[outcome] ?? REMINDER_OUTCOMES.failed;
 }
 
 export async function setHandoffReceived(
