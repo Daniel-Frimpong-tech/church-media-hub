@@ -8,6 +8,13 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# Placeholder values so the app can build and serve the login page.
+# No test in CI talks to a real Supabase project.
+env:
+  NEXT_PUBLIC_APP_URL: http://localhost:3100
+  NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_placeholder
+
 jobs:
   check:
     name: Lint, typecheck, unit tests

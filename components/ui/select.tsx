@@ -1,0 +1,45 @@
+import type { SelectHTMLAttributes } from "react";
+import { useId } from "react";
+import { cn } from "@/lib/cn";
+
+export type SelectProps = SelectHTMLAttributes<HTMLSelectElement> & {
+  label: string;
+  /** Keep the label for screen readers but hide it visually. */
+  hideLabel?: boolean;
+};
+
+export function Select({
+  label,
+  hideLabel,
+  className,
+  id,
+  children,
+  ...props
+}: SelectProps) {
+  const generatedId = useId();
+  const selectId = id ?? generatedId;
+
+  return (
+    <div className="flex flex-col gap-2">
+      <label
+        htmlFor={selectId}
+        className={cn(
+          "text-body-sm font-medium text-ink",
+          hideLabel && "sr-only",
+        )}
+      >
+        {label}
+      </label>
+      <select
+        id={selectId}
+        className={cn(
+          "h-12 rounded-sm border border-border-strong bg-canvas px-3 text-body text-ink disabled:bg-surface-soft disabled:text-muted-soft",
+          className,
+        )}
+        {...props}
+      >
+        {children}
+      </select>
+    </div>
+  );
+}
