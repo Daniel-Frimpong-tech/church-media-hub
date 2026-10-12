@@ -692,3 +692,84 @@ state it is meant to produce.
 stop the main-flow test from running at all. Testing it also keeps it honest as
 the schema changes: a migration that breaks the seed fails a test instead of
 being discovered months later.
+
+## Redesign, part 1: foundation
+
+### A new design system, because the first one came out plain
+
+**Choice:** Replace the light, Airbnb-based design with a dark one adapted from
+Spotify's system: charcoal surfaces, bold type, pill buttons, and photos used
+wherever a screen can show them. Details are in [DESIGN.md](DESIGN.md).
+
+**Why:** The first version was built from design tokens without ever being seen
+with real content, and it showed: white pages of text in boxes, no imagery in a
+photo app, and admin sections two clicks deep. The team is meant to want to open
+this after a service. A media library looks best when the interface recedes and
+the pictures carry the colour, which is exactly what that system is designed for.
+
+Because every screen was already built from named tokens (`canvas`, `ink`,
+`surface`), changing the values restyled the whole app at once. The screens are
+then being restructured one area at a time.
+
+### Screens are split into "load the data" and "draw it"
+
+**Choice:** The home page is now two parts. `lib/dashboard.ts` gathers
+everything and returns one plain object. `components/dashboard/dashboard-view.tsx`
+takes that object and draws it, and knows nothing about the database.
+
+**Why:** It makes the screen previewable. `/preview/dashboard` passes the same
+view a hand-written sample object, so the design can be looked at, at phone and
+desktop sizes, without signing in or having data. Building the first version
+blind was the root cause of it looking plain; this fixes the cause. The very
+first preview also caught a bug that the type checker could not.
+
+### Preview pages exist only in development
+
+**Choice:** `/preview/*` returns 404 when `NODE_ENV` is `production`, and the
+sign-in bypass for it in `proxy.ts` is only added outside production.
+
+**Why:** They show fake data with no sign-in, which is exactly what must never
+be reachable on the live site.
+
+### Analytics are counted in the database
+
+**Choice:** A Postgres function, `upload_analytics`, returns the dashboard's
+counts (per week, per category, per person, totals) as one JSON object. It is
+`security invoker`, so it runs as the person asking and Row Level Security
+still applies.
+
+**Why:** Supabase's API returns at most 1,000 rows per request. Counting uploads
+in the app would work in testing and then quietly under-count once the library
+grew. Counting in SQL is correct at any size and is one fast request. Because
+RLS applies, a viewer's numbers cover only what their team may see, with no
+extra code.
+
+### Weeks run Sunday to Saturday, in Pacific time
+
+**Choice:** The weekly chart groups uploads into weeks starting on Sunday on the
+church's calendar, and shows every week including empty ones.
+
+**Why:** A church week is a Sunday service and everything uploaded after it.
+Monday-start weeks would split one service's uploads across two columns. Empty
+weeks are kept because a missing week is exactly what an admin should notice.
+
+### What the handoff figures count
+
+**Choice:** "On time" counts a handoff once its outcome is known: confirmed by
+its deadline (on time), confirmed after it or still unconfirmed past it (late).
+Handoffs still inside their deadline are left out. "Typical time to deliver" is
+the median, not the average.
+
+**Why:** Counting not-yet-due handoffs as late (or as on time) would make the
+figure swing every Sunday for no reason. The median is used because one handoff
+confirmed a week late would drag an average far from what is normal.
+
+### Charts use one colour and write their numbers out
+
+**Choice:** Columns and bars are all the accent violet. Values are printed next
+to every bar, and the column chart has the same data as a hidden table.
+
+**Why:** Each chart answers "how many", and one hue is the clearest way to show
+amount. Using a different colour per category would add decoration without
+adding information, since the labels already say which is which, and it would
+make the charts harder to read for colour-blind people.

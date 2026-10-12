@@ -39,7 +39,7 @@ export function HandoffList({
               <div className="flex flex-wrap items-center gap-2">
                 <Link
                   href={`/services/${handoff.serviceId}/${handoff.categorySlug}`}
-                  className="text-body font-medium text-primary underline"
+                  className="text-body-sm font-bold text-ink underline-offset-4 hover:underline"
                 >
                   {handoff.categoryName}
                 </Link>

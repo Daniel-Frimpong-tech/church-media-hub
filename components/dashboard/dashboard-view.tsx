@@ -22,7 +22,7 @@ import { Badge } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
 import { ProgressRing } from "@/components/ui/progress-ring";
 import { cn } from "@/lib/cn";
-import { compactNumber, compareToPrevious } from "@/lib/domain/analytics";
+import { compareToPrevious } from "@/lib/domain/analytics";
 import { formatBytes } from "@/lib/domain/uploads";
 import type {
   Analytics,
@@ -58,10 +58,17 @@ export function DashboardView({ data }: { data: DashboardData }) {
 
       {data.recentUploads.length > 0 ? (
         <section className="flex flex-col gap-3">
-          <SectionHeading title="Fresh uploads" href="/gallery" linkLabel="Open gallery" />
-          <ul className="no-scrollbar -mx-4 flex snap-x gap-3 overflow-x-auto px-4 tablet:-mx-8 tablet:px-8">
+          <SectionHeading
+            title="Fresh uploads"
+            href="/gallery"
+            linkLabel="Open gallery"
+          />
+          <ul className="no-scrollbar -mx-4 flex snap-x gap-3 overflow-x-auto px-4 tablet:-mx-8 tablet:px-8 desktop:mx-0 desktop:px-0">
             {data.recentUploads.map((upload) => (
-              <li key={upload.id} className="w-36 shrink-0 snap-start tablet:w-44">
+              <li
+                key={upload.id}
+                className="w-36 shrink-0 snap-start tablet:w-44"
+              >
                 <Link href={upload.href} className="group flex flex-col gap-2">
                   <span className="relative block aspect-square overflow-hidden rounded-md bg-surface-strong">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -89,32 +96,42 @@ export function DashboardView({ data }: { data: DashboardData }) {
 
       {data.analytics ? <AnalyticsSection analytics={data.analytics} /> : null}
 
-      <section className="flex flex-col gap-3">
-        <SectionHeading title="Coming up" href="/services" linkLabel="All services" />
-        {data.upcoming.length === 0 ? (
-          <div className="flex flex-col items-start gap-3 rounded-lg bg-surface p-6">
-            <p className="text-body-sm text-muted">
-              {data.canManage
-                ? "Nothing scheduled. Create the next service to set up its folders."
-                : "Nothing scheduled yet."}
-            </p>
-            {data.canManage ? (
-              <Link href="/services/new" className={buttonClasses("secondary", "sm")}>
-                <CalendarPlus aria-hidden size={16} />
-                New service
-              </Link>
-            ) : null}
-          </div>
-        ) : (
-          <ul className="grid gap-3 tablet:grid-cols-2 desktop:grid-cols-3">
-            {data.upcoming.map((service) => (
-              <li key={service.id}>
-                <UpcomingCard service={service} />
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+      {/* With no services at all, the card above already says what to do. */}
+      {data.focus || data.upcoming.length > 0 ? (
+        <section className="flex flex-col gap-3">
+          <SectionHeading
+            title="Coming up"
+            href="/services"
+            linkLabel="All services"
+          />
+          {data.upcoming.length === 0 ? (
+            <div className="flex flex-col items-start gap-3 rounded-lg bg-surface p-6">
+              <p className="text-body-sm text-muted">
+                {data.canManage
+                  ? "Nothing scheduled. Create the next service to set up its folders."
+                  : "Nothing scheduled yet."}
+              </p>
+              {data.canManage ? (
+                <Link
+                  href="/services/new"
+                  className={buttonClasses("secondary", "sm")}
+                >
+                  <CalendarPlus aria-hidden size={16} />
+                  New service
+                </Link>
+              ) : null}
+            </div>
+          ) : (
+            <ul className="grid gap-3 tablet:grid-cols-2 desktop:grid-cols-3">
+              {data.upcoming.map((service) => (
+                <li key={service.id}>
+                  <UpcomingCard service={service} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      ) : null}
     </div>
   );
 }
@@ -153,7 +170,10 @@ function Alerts({ data }: { data: DashboardData }) {
   return (
     <div className="flex flex-col gap-3">
       {data.viewerWithoutTeam ? (
-        <div role="status" className="flex flex-col gap-1 rounded-lg bg-warning-soft p-4">
+        <div
+          role="status"
+          className="flex flex-col gap-1 rounded-lg bg-warning-soft p-4"
+        >
           <p className="text-title text-warning">You are not on a team yet</p>
           <p className="text-body-sm text-ink-soft">
             You will see photos, videos and handoffs once an admin adds you to
@@ -178,8 +198,13 @@ function Alerts({ data }: { data: DashboardData }) {
                 : "Services cannot get Drive folders until the church account is connected."}
             </p>
           </div>
-          <Link href="/admin/google" className={buttonClasses("primary", "sm", "self-start")}>
-            {data.googleProblem === "expired" ? "Reconnect Google" : "Connect Google"}
+          <Link
+            href="/admin/google"
+            className={buttonClasses("primary", "sm", "self-start")}
+          >
+            {data.googleProblem === "expired"
+              ? "Reconnect Google"
+              : "Connect Google"}
           </Link>
         </div>
       ) : null}
@@ -194,7 +219,13 @@ const WHEN_LABEL: Record<FocusService["when"], string> = {
 };
 
 /** The service people are most likely here for, with the main action one tap away. */
-function FocusCard({ focus, canUpload }: { focus: FocusService; canUpload: boolean }) {
+function FocusCard({
+  focus,
+  canUpload,
+}: {
+  focus: FocusService;
+  canUpload: boolean;
+}) {
   return (
     <section className="relative overflow-hidden rounded-xl bg-surface">
       {/* A soft wash of the accent so the card reads as the hero of the page. */}
@@ -224,7 +255,11 @@ function FocusCard({ focus, canUpload }: { focus: FocusService; canUpload: boole
           <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
             {focus.tasksTotal > 0 ? (
               <div className="flex items-center gap-3">
-                <ProgressRing done={focus.tasksDone} total={focus.tasksTotal} label="Tasks done" />
+                <ProgressRing
+                  done={focus.tasksDone}
+                  total={focus.tasksTotal}
+                  label="Tasks done"
+                />
                 <div className="flex flex-col">
                   <span className="text-body-sm font-bold text-ink">
                     {focus.tasksDone} of {focus.tasksTotal} tasks done
@@ -247,18 +282,26 @@ function FocusCard({ focus, canUpload }: { focus: FocusService; canUpload: boole
                 </span>
               </div>
             ) : (
-              <span className="text-caption text-muted">Nobody assigned yet</span>
+              <span className="text-caption text-muted">
+                Nobody assigned yet
+              </span>
             )}
           </div>
 
           <div className="flex flex-wrap gap-2">
             {canUpload ? (
-              <Link href={`/services/${focus.id}#upload`} className={buttonClasses("primary")}>
+              <Link
+                href={`/services/${focus.id}#upload`}
+                className={buttonClasses("primary")}
+              >
                 <UploadCloud aria-hidden size={18} />
                 Upload
               </Link>
             ) : null}
-            <Link href={`/services/${focus.id}`} className={buttonClasses("secondary")}>
+            <Link
+              href={`/services/${focus.id}`}
+              className={buttonClasses("secondary")}
+            >
               Open service
             </Link>
           </div>
@@ -271,7 +314,13 @@ function FocusCard({ focus, canUpload }: { focus: FocusService; canUpload: boole
 }
 
 /** Up to four photos from the service, or a quiet placeholder before any exist. */
-function CoverMosaic({ covers, fileCount }: { covers: string[]; fileCount: number }) {
+function CoverMosaic({
+  covers,
+  fileCount,
+}: {
+  covers: string[];
+  fileCount: number;
+}) {
   if (covers.length === 0) {
     return (
       <div className="flex aspect-[4/3] w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-hairline bg-canvas/40 text-muted tablet:w-72">
@@ -398,7 +447,10 @@ function Handoffs({ data }: { data: DashboardData }) {
             <Badge tone="danger">{data.lateHandoffs} late</Badge>
           ) : null}
         </div>
-        <Link href="/handoffs" className="text-body-sm font-bold text-muted hover:text-ink">
+        <Link
+          href="/handoffs"
+          className="text-body-sm font-bold text-muted hover:text-ink"
+        >
           See all
         </Link>
       </div>
@@ -435,7 +487,9 @@ function UpcomingCard({ service }: { service: UpcomingService }) {
           {service.missing > 0 ? (
             <Badge tone="warning">{service.missing} to upload</Badge>
           ) : null}
-          {service.foldersFailed ? <Badge tone="danger">Folders not created</Badge> : null}
+          {service.foldersFailed ? (
+            <Badge tone="danger">Folders not created</Badge>
+          ) : null}
         </span>
       </div>
     </Link>
@@ -445,7 +499,10 @@ function UpcomingCard({ service }: { service: UpcomingService }) {
 // ── Analytics ───────────────────────────────────────────────────────────────
 
 function AnalyticsSection({ analytics }: { analytics: Analytics }) {
-  const change = compareToPrevious(analytics.last30Days, analytics.previous30Days);
+  const change = compareToPrevious(
+    analytics.last30Days,
+    analytics.previous30Days,
+  );
   const rate = analytics.handoffs.onTimeRate;
   const ratePercent = rate === null ? null : Math.round(rate * 100);
 
@@ -457,14 +514,18 @@ function AnalyticsSection({ analytics }: { analytics: Analytics }) {
         <StatTile
           icon={<ImageUp aria-hidden size={16} />}
           label="Uploads, last 30 days"
-          value={<CountUp value={analytics.last30Days} format={compactNumber} />}
+          value={<CountUp value={analytics.last30Days} compact />}
           footnote={
             change.percent === null ? (
               "No earlier month to compare"
             ) : (
               <span className="flex items-center gap-1">
                 {change.direction === "down" ? (
-                  <TrendingDown aria-hidden size={14} className="text-warning" />
+                  <TrendingDown
+                    aria-hidden
+                    size={14}
+                    className="text-warning"
+                  />
                 ) : (
                   <TrendingUp aria-hidden size={14} className="text-success" />
                 )}
@@ -482,7 +543,7 @@ function AnalyticsSection({ analytics }: { analytics: Analytics }) {
             ratePercent === null ? (
               "–"
             ) : (
-              <CountUp value={ratePercent} format={(n) => `${n}%`} />
+              <CountUp value={ratePercent} suffix="%" />
             )
           }
           footnote={
@@ -501,7 +562,7 @@ function AnalyticsSection({ analytics }: { analytics: Analytics }) {
             ) : (
               <CountUp
                 value={analytics.handoffs.medianHoursToDeliver}
-                format={(n) => `${n}h`}
+                suffix="h"
               />
             )
           }
@@ -510,8 +571,8 @@ function AnalyticsSection({ analytics }: { analytics: Analytics }) {
         <StatTile
           icon={<HardDrive aria-hidden size={16} />}
           label="In the library"
-          value={<CountUp value={analytics.totalFiles} format={compactNumber} />}
-          footnote={`${formatBytes(analytics.totalBytes)} · ${analytics.photos.toLocaleString("en-US")} photos and ${analytics.videos.toLocaleString("en-US")} videos lately`}
+          value={<CountUp value={analytics.totalFiles} compact />}
+          footnote={`Files, using ${formatBytes(analytics.totalBytes)} of Google Drive`}
         />
       </div>
 
@@ -520,8 +581,8 @@ function AnalyticsSection({ analytics }: { analytics: Analytics }) {
           <div className="flex flex-col gap-0.5">
             <h3 className="text-title text-ink">Uploads per week</h3>
             <p className="text-caption text-muted">
-              Files uploaded each week, Sunday to Saturday. The brightest
-              column is this week.
+              Files uploaded each week, Sunday to Saturday. The brightest column
+              is this week.
             </p>
           </div>
           <ColumnChart
@@ -551,12 +612,12 @@ function AnalyticsSection({ analytics }: { analytics: Analytics }) {
         </div>
       </div>
 
-      <div className="flex flex-col gap-4 rounded-lg bg-surface p-5">
-        <div className="flex flex-col gap-0.5">
-          <h3 className="text-title text-ink">Who has been uploading</h3>
-          <p className="text-caption text-muted">Files in the last 8 weeks</p>
-        </div>
-        <div className="desktop:max-w-2xl">
+      <div className="grid gap-3 desktop:grid-cols-2">
+        <div className="flex flex-col gap-4 rounded-lg bg-surface p-5">
+          <div className="flex flex-col gap-0.5">
+            <h3 className="text-title text-ink">Who has been uploading</h3>
+            <p className="text-caption text-muted">Files in the last 8 weeks</p>
+          </div>
           <BarList
             unit="files"
             emptyText="Nobody has uploaded in the last 8 weeks."
@@ -567,8 +628,78 @@ function AnalyticsSection({ analytics }: { analytics: Analytics }) {
             }))}
           />
         </div>
+
+        <div className="flex flex-col gap-4 rounded-lg bg-surface p-5">
+          <div className="flex flex-col gap-0.5">
+            <h3 className="text-title text-ink">Handoff record</h3>
+            <p className="text-caption text-muted">
+              Deliveries to receiving teams in the last 8 weeks
+            </p>
+          </div>
+          <HandoffRecord
+            onTime={analytics.handoffs.onTime}
+            late={analytics.handoffs.late}
+          />
+          <div className="flex flex-col gap-2 border-t border-hairline pt-4">
+            <span className="text-caption text-muted">What was uploaded</span>
+            <div className="flex flex-wrap gap-2">
+              <Badge>{analytics.photos.toLocaleString("en-US")} photos</Badge>
+              <Badge>{analytics.videos.toLocaleString("en-US")} videos</Badge>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
+  );
+}
+
+/**
+ * On time against late, as one bar split in two. Status colours are used
+ * because this is a status; each part is also named and counted in words.
+ */
+function HandoffRecord({ onTime, late }: { onTime: number; late: number }) {
+  const total = onTime + late;
+  if (total === 0) {
+    return (
+      <p className="text-body-sm text-muted">
+        No handoffs have reached their deadline yet.
+      </p>
+    );
+  }
+  return (
+    <div className="flex flex-col gap-3">
+      {/* The gap between the two parts is the page showing through. */}
+      <div aria-hidden className="flex h-3 gap-0.5">
+        {onTime > 0 ? (
+          <div
+            style={{ flexGrow: onTime }}
+            className="origin-left animate-grow-x rounded-l-full bg-success last:rounded-r-full"
+          />
+        ) : null}
+        {late > 0 ? (
+          <div
+            style={{ flexGrow: late }}
+            className="origin-left animate-grow-x rounded-r-full bg-danger first:rounded-l-full"
+          />
+        ) : null}
+      </div>
+      <dl className="flex flex-wrap gap-x-8 gap-y-2">
+        <div className="flex items-center gap-2">
+          <span aria-hidden className="h-2.5 w-2.5 rounded-full bg-success" />
+          <dt className="text-body-sm text-ink-soft">On time</dt>
+          <dd className="text-body-sm font-bold text-ink tabular-nums">
+            {onTime}
+          </dd>
+        </div>
+        <div className="flex items-center gap-2">
+          <span aria-hidden className="h-2.5 w-2.5 rounded-full bg-danger" />
+          <dt className="text-body-sm text-ink-soft">Late</dt>
+          <dd className="text-body-sm font-bold text-ink tabular-nums">
+            {late}
+          </dd>
+        </div>
+      </dl>
+    </div>
   );
 }
 
@@ -604,10 +735,16 @@ function StatTile({
       </span>
       <span className="text-display text-ink">{value}</span>
       {tone ? (
-        <div aria-hidden className={cn("h-1.5 overflow-hidden rounded-full", tone.track)}>
+        <div
+          aria-hidden
+          className={cn("h-1.5 overflow-hidden rounded-full", tone.track)}
+        >
           <div
             style={{ width: `${meter}%` }}
-            className={cn("h-full origin-left animate-grow-x rounded-full", tone.fill)}
+            className={cn(
+              "h-full origin-left animate-grow-x rounded-full",
+              tone.fill,
+            )}
           />
         </div>
       ) : null}

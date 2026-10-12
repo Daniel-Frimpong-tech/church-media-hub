@@ -94,7 +94,7 @@ test("create a service, upload a photo, and see it in the gallery", async ({
   );
 
   await page.goto("/dashboard");
-  await expect(page.getByRole("heading", { name: "Hello, E2E" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /, E2E$/ })).toBeVisible();
 
   // ── Create a service ──
   const serviceName = `E2E Service ${Date.now()}`;

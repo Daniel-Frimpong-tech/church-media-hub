@@ -61,11 +61,18 @@ export function AvatarStack({ names, max = 4 }: { names: string[]; max?: number 
   const extra = names.length - shown.length;
   return (
     <span className="flex items-center">
-      {shown.map((name) => (
-        <Avatar key={name} name={name} className="-ml-2 ring-2 ring-surface first:ml-0" />
+      {shown.map((name, index) => (
+        // Earlier people sit on top, so the overlap never covers initials.
+        <span
+          key={name}
+          style={{ zIndex: shown.length - index }}
+          className="relative -ml-1.5 rounded-full ring-2 ring-surface first:ml-0"
+        >
+          <Avatar name={name} />
+        </span>
       ))}
       {extra > 0 ? (
-        <span className="-ml-2 inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-surface-strong px-1.5 text-caption font-bold text-ink-soft ring-2 ring-surface">
+        <span className="-ml-1.5 inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-surface-strong px-1.5 text-caption font-bold text-ink-soft ring-2 ring-surface">
           +{extra}
         </span>
       ) : null}

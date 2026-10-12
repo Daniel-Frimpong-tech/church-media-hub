@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { compactNumber } from "@/lib/domain/analytics";
 
 /**
  * A number that counts up to its value when it first appears. Purely a
@@ -9,12 +10,15 @@ import { useEffect, useRef, useState } from "react";
  */
 export function CountUp({
   value,
-  format,
+  compact = false,
+  suffix = "",
   durationMs = 900,
 }: {
   value: number;
-  /** Turns the in-between number into text, e.g. adding "%" or compacting. */
-  format?: (value: number) => string;
+  /** Shorten large numbers: 12,900 becomes 12.9K. */
+  compact?: boolean;
+  /** Text after the number, such as "%" or "h". */
+  suffix?: string;
   durationMs?: number;
 }) {
   const [shown, setShown] = useState(value);
@@ -43,7 +47,8 @@ export function CountUp({
     return () => cancelAnimationFrame(frame);
   }, [value, durationMs]);
 
-  const text = (n: number) => (format ? format(n) : n.toLocaleString("en-US"));
+  const text = (n: number) =>
+    `${compact ? compactNumber(n) : n.toLocaleString("en-US")}${suffix}`;
 
   return (
     <>

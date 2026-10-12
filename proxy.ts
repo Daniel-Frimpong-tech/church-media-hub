@@ -6,6 +6,9 @@ import { supabasePublishableKey, supabaseUrl } from "@/lib/env";
 // their own secrets inside those routes.
 const PUBLIC_PREFIXES = ["/login", "/auth/", "/api/telegram/", "/api/cron/"];
 
+// Design previews with sample data. They only exist in local development.
+if (process.env.NODE_ENV !== "production") PUBLIC_PREFIXES.push("/preview/");
+
 function isPublic(pathname: string): boolean {
   return PUBLIC_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(prefix),
