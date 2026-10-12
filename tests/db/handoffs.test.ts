@@ -314,3 +314,58 @@ describe("who can see handoffs", () => {
     }
   });
 });
+
+describe("deleting uploads", () => {
+  it("un-readies a category when its only file is deleted and nobody is assigned", async () => {
+    const service = await newService("2030-09-01T18:00:00Z");
+    await completeUpload(service, preacher, photographer);
+    expect((await handoff(service, preacher, thumbnails)).ready_at).not.toBeNull();
+
+    await db.as(admin, "delete from public.uploads where service_id = $1", [service]);
+    expect((await handoff(service, preacher, thumbnails)).ready_at).toBeNull();
+  });
+
+  it("keeps a confirmed handoff as it was", async () => {
+    const service = await newService("2030-09-08T18:00:00Z");
+    await completeUpload(service, preacher, photographer);
+    const { id } = await handoff(service, preacher, thumbnails);
+    await db.as(thumbnailViewer, "select public.set_handoff_received($1, true)", [id]);
+
+    await db.as(admin, "delete from public.uploads where service_id = $1", [service]);
+    const after = await handoff(service, preacher, thumbnails);
+    expect(after.received_at).not.toBeNull();
+    expect(after.ready_at).not.toBeNull();
+  });
+
+  it("lets only admins delete an upload", async () => {
+    const service = await newService("2030-09-15T18:00:00Z");
+    await completeUpload(service, preacher, photographer);
+
+    // Not an error: Row Level Security simply matches no rows for them.
+    await db.as(photographer, "delete from public.uploads where service_id = $1", [service]);
+    await db.as(thumbnailViewer, "delete from public.uploads where service_id = $1", [service]);
+    expect(
+      await db.admin("select 1 from public.uploads where service_id = $1", [service]),
+    ).toHaveLength(1);
+  });
+
+  it("lets an admin delete a service once its uploads are removed, taking everything with it", async () => {
+    const service = await newService("2030-09-22T18:00:00Z");
+    await assign(service, photographer, [preacher]);
+    await completeUpload(service, preacher, photographer);
+
+    // Upload records protect the service from being deleted by accident.
+    await expect(
+      db.as(admin, "delete from public.services where id = $1", [service]),
+    ).rejects.toThrow(/foreign key/);
+
+    await db.as(admin, "delete from public.uploads where service_id = $1", [service]);
+    await db.as(admin, "delete from public.services where id = $1", [service]);
+
+    for (const table of ["handoffs", "assignments", "uploads"]) {
+      expect(
+        await db.admin(`select 1 from public.${table} where service_id = $1`, [service]),
+      ).toHaveLength(0);
+    }
+  });
+});

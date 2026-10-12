@@ -180,4 +180,43 @@ test("create a service, upload a photo, and see it in the gallery", async ({
   // A category nothing was uploaded to stays empty.
   await page.goto(`/services/${serviceId}/baptism`);
   await expect(page.getByText("Nothing here yet")).toBeVisible();
+
+  // ── Delete the file from the full-size view ──
+  await page.goto(`/services/${serviceId}/preacher`);
+  await page.getByRole("button", { name: "Open preacher-photo.png" }).click();
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.getByRole("button", { name: "Delete this file" }).click();
+  await expect(page.getByText("Nothing here yet")).toBeVisible({ timeout: 30_000 });
+  const afterFileDelete = await admin
+    .from("uploads")
+    .select("id")
+    .eq("service_id", serviceId);
+  expect(afterFileDelete.data).toHaveLength(0);
+
+  // ── Delete a service that has uploads ──
+  await page.goto(`/services/${serviceId}`);
+  await page.locator('input[type="file"]').setInputFiles({
+    name: "second-photo.png",
+    mimeType: "image/png",
+    buffer: PHOTO,
+  });
+  await expect(page.getByText("Uploaded", { exact: true })).toBeVisible({
+    timeout: 30_000,
+  });
+
+  await page.goto(`/services/${serviceId}/edit`);
+  const deleteButton = page.getByRole("button", {
+    name: "Delete service and 1 file",
+  });
+  // Locked until the service's name is typed.
+  await expect(deleteButton).toBeDisabled();
+  await page.getByLabel(/to confirm$/).fill(serviceName);
+  await deleteButton.click();
+
+  await expect(page).toHaveURL(/\/services$/, { timeout: 30_000 });
+  await expect(page.getByText(serviceName)).toHaveCount(0);
+  const gone = await admin.from("services").select("id").eq("id", serviceId);
+  expect(gone.data).toHaveLength(0);
+  const orphans = await admin.from("uploads").select("id").eq("service_id", serviceId);
+  expect(orphans.data).toHaveLength(0);
 });

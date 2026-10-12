@@ -452,13 +452,22 @@ columns. A member needs to set "done" on their own task without being able to
 reassign it; a viewer needs to set "received" without being able to move the
 deadline. A function is the narrowest tool for that.
 
-### Services with uploads cannot be deleted
+### Deleting is possible, deliberate, and recoverable in Drive
 
-**Choice:** Deleting a service is allowed only while it has no upload records.
-Its empty Drive folder goes to the Drive bin.
+**Choice:** Admins can delete a single file from the full-size view, and can
+delete a service together with its uploads by typing the service's name. In
+both cases the Drive file or folder is moved to the Drive bin first, and only
+then are the records removed. If Drive cannot be reached, nothing is deleted.
+The database still refuses to delete a service that has upload records, so the
+app removes those explicitly, in that order.
 
-**Why:** Upload records are the audit trail the team asked for. An accidental
-delete should not erase who delivered what, or orphan files in Drive.
+**Why:** At first a service with uploads could not be deleted at all, to protect
+the record of who delivered what. That turned out to be too strict: test data
+has to be cleared before real use, and mistakes happen. Typing the name makes an
+accidental delete very unlikely, and the Drive bin keeps the files themselves
+restorable for 30 days. Doing Drive first means a failure never leaves files in
+Drive with no record pointing at them. The upload records are not recoverable,
+and the screen says so before the button unlocks.
 
 ## Phase 6: Telegram bot
 

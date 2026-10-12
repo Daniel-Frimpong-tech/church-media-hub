@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ActionButton } from "@/components/ui/action-button";
 import { Card } from "@/components/ui/card";
 import { requireAdmin } from "@/lib/auth";
 import { churchClockTime, churchIsoDate } from "@/lib/domain/time";
 import { createClient } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/uploads/api";
-import { deleteService } from "../../actions";
+import { DeleteServiceForm } from "./delete-service-form";
 import { EditServiceForm } from "./edit-service-form";
 
 export const metadata: Metadata = { title: "Edit service" };
@@ -28,7 +27,7 @@ export default async function EditServicePage({
       .eq("service_id", id),
   ]);
   if (!service.data) notFound();
-  const hasUploads = (uploads.count ?? 0) > 0;
+  const uploadCount = uploads.count ?? 0;
 
   return (
     <div className="mx-auto flex w-full max-w-xl flex-col gap-6">
@@ -53,29 +52,16 @@ export default async function EditServicePage({
 
       <Card className="flex flex-col gap-3">
         <h2 className="text-title text-ink">Delete this service</h2>
-        {hasUploads ? (
-          <p className="text-body-sm text-muted">
-            This service has uploads, so it cannot be deleted. That protects
-            the record of who uploaded what.
-          </p>
-        ) : (
-          <>
-            <p className="text-body-sm text-muted">
-              Removes the service, its assignments and handoffs, and moves its
-              empty Google Drive folder to the Drive bin.
-            </p>
-            <ActionButton
-              action={deleteService}
-              fields={{ service_id: id }}
-              label="Delete service"
-              pendingLabel="Deleting…"
-              variant="danger"
-              size="md"
-              className="self-start"
-              confirmMessage={`Delete ${service.data.name}? This cannot be undone here.`}
-            />
-          </>
-        )}
+        <p className="text-body-sm text-muted">
+          {uploadCount > 0
+            ? `This also deletes its ${uploadCount} ${uploadCount === 1 ? "file" : "files"} and the record of who uploaded them, along with its assignments and handoffs. The Google Drive folder moves to the Drive bin, where it can be restored for 30 days. The records here cannot be restored.`
+            : "Removes the service, its assignments and handoffs, and moves its empty Google Drive folder to the Drive bin."}
+        </p>
+        <DeleteServiceForm
+          serviceId={id}
+          serviceName={service.data.name}
+          uploadCount={uploadCount}
+        />
       </Card>
     </div>
   );

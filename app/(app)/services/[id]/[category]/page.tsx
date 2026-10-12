@@ -17,7 +17,7 @@ const ALBUM_LIMIT = 1000;
 export default async function AlbumPage({
   params,
 }: PageProps<"/services/[id]/[category]">) {
-  await requireProfile();
+  const profile = await requireProfile();
   const { id, category: slug } = await params;
   if (!isUuid(id) || !/^[a-z0-9-]{1,60}$/.test(slug)) notFound();
 
@@ -59,7 +59,7 @@ export default async function AlbumPage({
           Nothing here yet. Files appear as soon as they finish uploading.
         </p>
       ) : (
-        <GalleryGrid items={items} />
+        <GalleryGrid items={items} canDelete={profile.role === "admin"} />
       )}
     </div>
   );
