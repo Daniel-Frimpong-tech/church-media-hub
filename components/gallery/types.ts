@@ -7,6 +7,15 @@ export type GalleryItem = {
   /** "Preacher · Sun, Oct 12, 2025" style line shown under the full-size view. */
   caption: string;
   uploadedBy: string | null;
-  /** Overrides where the images load from. Only preview pages set this. */
-  preview?: { small: string; large: string };
+  /**
+   * Where this item's images and file come from, when not the signed-in
+   * routes. Share links set these to their own token-guarded addresses.
+   * `download` and `view` are null when the visitor may not have the file.
+   */
+  urls?: {
+    small: string;
+    large: string;
+    download: string | null;
+    view: string | null;
+  };
 };

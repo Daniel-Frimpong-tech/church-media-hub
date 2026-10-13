@@ -4,7 +4,16 @@ import { supabasePublishableKey, supabaseUrl } from "@/lib/env";
 
 // Reachable without signing in. Telegram and the scheduler authenticate with
 // their own secrets inside those routes.
-const PUBLIC_PREFIXES = ["/login", "/auth/", "/api/telegram/", "/api/cron/"];
+// Share links ("/s/…" and their images and files) are for people without an
+// account: the long random token in the address is the permission.
+const PUBLIC_PREFIXES = [
+  "/login",
+  "/auth/",
+  "/api/telegram/",
+  "/api/cron/",
+  "/s/",
+  "/api/share/",
+];
 
 // Design previews with sample data. They only exist in local development.
 if (process.env.NODE_ENV !== "production") PUBLIC_PREFIXES.push("/preview/");

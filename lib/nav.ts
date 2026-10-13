@@ -11,7 +11,8 @@ export type NavIcon =
   | "categories"
   | "schedule"
   | "drive"
-  | "telegram";
+  | "telegram"
+  | "share";
 
 export type NavLink = { href: string; label: string; icon: NavIcon };
 
@@ -28,6 +29,7 @@ export const ADMIN_NAV: NavLink[] = [
   { href: "/admin/teams", label: "Teams", icon: "teams" },
   { href: "/admin/categories", label: "Categories", icon: "categories" },
   { href: "/admin/schedule", label: "Schedule", icon: "schedule" },
+  { href: "/admin/shares", label: "Shared links", icon: "share" },
   { href: "/admin/google", label: "Google Drive", icon: "drive" },
   { href: "/admin/telegram", label: "Telegram", icon: "telegram" },
 ];

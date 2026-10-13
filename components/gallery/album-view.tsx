@@ -1,5 +1,6 @@
 import { ArrowLeft, ImageOff } from "lucide-react";
 import Link from "next/link";
+import { ShareButton } from "@/components/share/share-button";
 import { UploadButton } from "@/components/upload/upload-provider";
 import { GalleryGrid } from "./gallery-grid";
 import type { GalleryItem } from "./types";
@@ -14,6 +15,8 @@ export type AlbumData = {
   items: GalleryItem[];
   canUpload: boolean;
   canDelete: boolean;
+  /** Admins can make a link to this album for someone without an account. */
+  canShare: boolean;
 };
 
 /** One category of one service, as a photo album. */
@@ -36,13 +39,22 @@ export function AlbumView({ data }: { data: AlbumData }) {
               {data.items.length === 1 ? "file" : "files"}
             </p>
           </div>
-          {data.canUpload ? (
-            <UploadButton
-              serviceId={data.serviceId}
-              categoryId={data.categoryId}
-              label={`Add to ${data.categoryName}`}
-            />
-          ) : null}
+          <div className="flex flex-wrap items-center gap-2">
+            {data.canUpload ? (
+              <UploadButton
+                serviceId={data.serviceId}
+                categoryId={data.categoryId}
+                label={`Add to ${data.categoryName}`}
+              />
+            ) : null}
+            {data.canShare ? (
+              <ShareButton
+                serviceId={data.serviceId}
+                categoryId={data.categoryId}
+                covers={`${data.categoryName} from ${data.serviceName}, ${data.dateLine}`}
+              />
+            ) : null}
+          </div>
         </div>
       </header>
 

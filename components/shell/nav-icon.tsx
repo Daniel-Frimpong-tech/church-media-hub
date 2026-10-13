@@ -5,6 +5,7 @@ import {
   HardDrive,
   Home,
   Images,
+  Link2,
   PackageCheck,
   Send,
   UserRound,
@@ -24,6 +25,7 @@ const ICONS: Record<NavIconName, React.ComponentType<LucideProps>> = {
   schedule: CalendarClock,
   drive: HardDrive,
   telegram: Send,
+  share: Link2,
 };
 
 export function NavIcon({ name, ...props }: { name: NavIconName } & LucideProps) {

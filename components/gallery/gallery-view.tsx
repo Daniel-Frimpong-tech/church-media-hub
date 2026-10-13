@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight, ImageOff, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
+import { ShareButton } from "@/components/share/share-button";
 import { buttonClasses } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -15,12 +16,17 @@ export type GalleryData = {
   items: GalleryItem[];
   hasNextPage: boolean;
   canDelete: boolean;
+  /** Admins can make a link to the chosen category, or the whole gallery. */
+  canShare: boolean;
 };
 
 /** Every photo and video the person may see, newest first, with filters. */
 export function GalleryView({ data }: { data: GalleryData }) {
   const { filters } = data;
   const filtered = hasFilters(filters);
+  const sharedCategory = data.categories.find(
+    (category) => category.id === filters.categoryId,
+  )?.name;
   // Service and dates are the less common filters, so they start folded away
   // unless one is in use.
   const moreOpen = Boolean(filters.serviceId || filters.from || filters.to);
@@ -35,7 +41,20 @@ export function GalleryView({ data }: { data: GalleryData }) {
 
   return (
     <div className="stagger flex flex-col gap-5">
-      <h1 className="text-display text-ink tablet:text-hero">Gallery</h1>
+      <header className="flex flex-wrap items-center justify-between gap-4">
+        <h1 className="text-display text-ink tablet:text-hero">Gallery</h1>
+        {data.canShare ? (
+          // The link covers the chosen category in every service, or with
+          // "All" chosen, the whole gallery. Service and date filters are for
+          // browsing and are not part of the link.
+          <ShareButton
+            key={filters.categoryId ?? "all"}
+            categoryId={filters.categoryId ?? undefined}
+            covers={sharedCategory ? `Every ${sharedCategory} album` : "The whole gallery"}
+            wide
+          />
+        ) : null}
+      </header>
 
       <div className="flex flex-col gap-3">
         {/* One tap per category: the filter people use most. */}

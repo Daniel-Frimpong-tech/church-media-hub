@@ -18,6 +18,9 @@ for (const [size, options] of Object.entries(sizes)) {
     // Let entrance animations and count-ups finish.
     await page.waitForTimeout(1600);
     await page.screenshot({ path: `${outDir}/${screen}-${size}.png`, fullPage: true });
+    if (size === "phone") {
+      await page.screenshot({ path: `${outDir}/${screen}-phone-screen.png` });
+    }
     console.log(`${screen} ${size}`);
   }
   await context.close();

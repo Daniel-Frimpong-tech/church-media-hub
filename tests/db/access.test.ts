@@ -251,3 +251,61 @@ describe("server-only tables", () => {
     expect(Number(after.telegram_user_id)).toBe(4242);
   });
 });
+
+describe("share links", () => {
+  const token = "a".repeat(43);
+
+  it("lets an admin create one, and only admins see it", async () => {
+    await db.as(
+      admin,
+      "insert into public.share_links (token, label, category_id, created_by) values ($1, 'Pastor James', $2, $3)",
+      [token, baptism, admin],
+    );
+    expect(await db.as(admin, "select 1 from public.share_links")).toHaveLength(1);
+    expect(await db.as(member, "select 1 from public.share_links")).toHaveLength(0);
+    expect(await db.as(thumbnailViewer, "select 1 from public.share_links")).toHaveLength(0);
+  });
+
+  it("stops a member creating one", async () => {
+    await expect(
+      db.as(
+        member,
+        "insert into public.share_links (token, label) values ($1, 'Mine')",
+        ["b".repeat(43)],
+      ),
+    ).rejects.toThrow(/row-level security/);
+  });
+
+  it("cannot be read signed out, so tokens cannot be listed", async () => {
+    await expect(db.asAnon("select token from public.share_links")).rejects.toThrow(
+      /permission denied/,
+    );
+  });
+
+  it("rejects a token short enough to guess", async () => {
+    await expect(
+      db.as(admin, "insert into public.share_links (token, label) values ('short', 'x')"),
+    ).rejects.toThrow(/check constraint/);
+  });
+
+  it("does not let signed-in people count their own views up", async () => {
+    await expect(
+      db.as(admin, "select public.record_share_view((select id from public.share_links limit 1))"),
+    ).rejects.toThrow(/permission denied/);
+  });
+
+  it("goes away with the service or category it covers", async () => {
+    const [{ id: temporary }] = await db.admin<{ id: string }>(
+      "insert into public.services (name, starts_at) values ('One-off', now()) returning id",
+    );
+    await db.as(
+      admin,
+      "insert into public.share_links (token, label, service_id) values ($1, 'One-off link', $2)",
+      ["c".repeat(43), temporary],
+    );
+    await db.as(admin, "delete from public.services where id = $1", [temporary]);
+    expect(
+      await db.admin("select 1 from public.share_links where token = $1", ["c".repeat(43)]),
+    ).toHaveLength(0);
+  });
+});

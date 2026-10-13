@@ -1,8 +1,14 @@
+import type { CategoriesData } from "@/components/admin/categories-view";
+import type { PeopleData } from "@/components/admin/people-view";
+import type { ScheduleData } from "@/components/admin/schedule-view";
+import type { SharesData } from "@/components/admin/shares-view";
+import type { TeamsData } from "@/components/admin/teams-view";
 import type { DashboardData } from "@/components/dashboard/types";
 import type { AlbumData } from "@/components/gallery/album-view";
 import type { GalleryData } from "@/components/gallery/gallery-view";
 import type { GalleryItem } from "@/components/gallery/types";
 import type { ServiceData, ServiceSummary } from "@/components/services/types";
+import type { ShareData } from "@/components/share/share-view";
 import type { ShellUpload, ShellUser } from "@/components/shell/app-shell";
 import type { HandoffRow } from "@/lib/handoffs";
 
@@ -321,7 +327,12 @@ const galleryItems: GalleryItem[] = Array.from({ length: 23 }, (_, index) => ({
   sizeBytes: (index % 7 === 3 ? 180 : 6) * 1024 * 1024,
   caption: "Preacher · Sunday Service · Sun, Oct 12, 2025",
   uploadedBy: "Grace Mensah",
-  preview: { small: photo(`g${index}`), large: photo(`g${index}`, 1200) },
+  urls: {
+    small: photo(`g${index}`),
+    large: photo(`g${index}`, 1200),
+    download: "#",
+    view: "#",
+  },
 }));
 
 export const previewAlbum: AlbumData = {
@@ -333,6 +344,7 @@ export const previewAlbum: AlbumData = {
   items: galleryItems,
   canUpload: true,
   canDelete: true,
+  canShare: true,
 };
 
 export const previewGallery: GalleryData = {
@@ -345,4 +357,108 @@ export const previewGallery: GalleryData = {
   items: galleryItems,
   hasNextPage: true,
   canDelete: true,
+  canShare: true,
+};
+
+// ── Admin screens ───────────────────────────────────────────────────────────
+
+const TEAMS = [
+  { id: "t2", name: "Thumbnails" },
+  { id: "t3", name: "Social Media" },
+  { id: "t4", name: "Website" },
+];
+
+export const previewCategories: CategoriesData = {
+  hasReceivingTeams: true,
+  categories: [
+    { id: "c1", name: "Baptism", isActive: true, deliveries: [{ teamId: "t3", teamName: "Social Media", deadlineHours: 48 }], availableTeams: [TEAMS[0], TEAMS[2]] },
+    { id: "c2", name: "Preacher", isActive: true, deliveries: [{ teamId: "t2", teamName: "Thumbnails", deadlineHours: 24 }, { teamId: "t4", teamName: "Website", deadlineHours: 72 }], availableTeams: [TEAMS[1]] },
+    { id: "c3", name: "Fellowship", isActive: true, deliveries: [{ teamId: "t3", teamName: "Social Media", deadlineHours: 48 }], availableTeams: [TEAMS[0], TEAMS[2]] },
+    { id: "c4", name: "Videos", isActive: true, deliveries: [{ teamId: "t4", teamName: "Website", deadlineHours: 72 }], availableTeams: [TEAMS[0], TEAMS[1]] },
+    { id: "c5", name: "Worship", isActive: true, deliveries: [], availableTeams: TEAMS },
+    { id: "c6", name: "Kids Church", isActive: false, deliveries: [], availableTeams: TEAMS },
+  ],
+};
+
+const person = (id: string, name: string) => ({ id, name });
+const ALL_PEOPLE = [
+  person("p1", "Ama Owusu"),
+  person("p2", "Grace Mensah"),
+  person("p3", "Sam Boateng"),
+  person("p4", "Kofi Asante"),
+  person("p5", "Tola Adeyemi"),
+  person("p6", "Ada Nwosu"),
+];
+
+export const previewTeams: TeamsData = {
+  teams: [
+    { id: "t1", name: "Media", kind: "media", members: ALL_PEOPLE.slice(0, 4), candidates: ALL_PEOPLE.slice(4), receives: [] },
+    { id: "t2", name: "Thumbnails", kind: "receiving", members: [ALL_PEOPLE[4]], candidates: ALL_PEOPLE.slice(0, 4), receives: ["Preacher"] },
+    { id: "t3", name: "Social Media", kind: "receiving", members: [ALL_PEOPLE[5], ALL_PEOPLE[3]], candidates: ALL_PEOPLE.slice(0, 3), receives: ["Baptism", "Fellowship"] },
+    { id: "t4", name: "Website", kind: "receiving", members: [], candidates: ALL_PEOPLE, receives: [] },
+  ],
+};
+
+export const previewPeople: PeopleData = {
+  teams: [],
+  invites: [
+    { email: "new.volunteer@example.com", role: "member", teamName: "Media" },
+    { email: "pastor.james@example.com", role: "viewer", teamName: "Website" },
+  ],
+  people: [
+    { id: "p1", name: "Ama Owusu", email: "ama.owusu@example.com", role: "admin", active: true, isSelf: true, teams: ["Media"], telegramLinked: true },
+    { id: "p2", name: "Grace Mensah", email: "grace.mensah@example.com", role: "member", active: true, isSelf: false, teams: ["Media"], telegramLinked: true },
+    { id: "p3", name: "Sam Boateng", email: "sam.boateng@example.com", role: "member", active: true, isSelf: false, teams: ["Media"], telegramLinked: false },
+    { id: "p4", name: "Kofi Asante", email: "kofi.asante@example.com", role: "member", active: true, isSelf: false, teams: ["Media", "Social Media"], telegramLinked: true },
+    { id: "p5", name: "Tola Adeyemi", email: "tola.adeyemi@example.com", role: "viewer", active: true, isSelf: false, teams: ["Thumbnails"], telegramLinked: false },
+    { id: "p6", name: "Ada Nwosu", email: "ada.nwosu@example.com", role: "viewer", active: true, isSelf: false, teams: [], telegramLinked: false },
+    { id: "p7", name: "Yaw Darko", email: "yaw.darko@example.com", role: "member", active: false, isSelf: false, teams: [], telegramLinked: false },
+  ],
+};
+
+export const previewSchedule: ScheduleData = {
+  series: [
+    { id: "r1", name: "Sunday Service", weekday: 0, timeLabel: "10:00 AM", active: true },
+    { id: "r2", name: "Midweek Prayer", weekday: 3, timeLabel: "7:30 PM", active: true },
+    { id: "r3", name: "Youth Night", weekday: 5, timeLabel: "7:00 PM", active: false },
+  ],
+  jobs: {
+    lastRanLabel: "Wed, Oct 15, 12:15 PM",
+    stale: false,
+    lastResult: {
+      servicesCreated: 1,
+      foldersFixed: 0,
+      reminders: 1,
+      readyNotices: 0,
+      lateNotices: 1,
+      telegramLinked: true,
+      driveAccessRemoved: 0,
+      uploadsClosed: 0,
+      failed: [],
+    },
+  },
+};
+
+// ── Share links ─────────────────────────────────────────────────────────────
+
+export const previewShares: SharesData = {
+  links: [
+    { id: "l1", label: "Pastor James", covers: "Every Baptism album", url: "https://example.com/s/abc", status: "active", expiry: "Expires in 26 days", allowDownload: true, viewCount: 7, lastViewed: "Wed, Oct 15, 9:40 AM", createdBy: "Ama Owusu" },
+    { id: "l2", label: "Elder Mary (anniversary)", covers: "Everything from Sunday Service, Sun, Oct 12, 2025", url: "https://example.com/s/def", status: "active", expiry: "Expires in 3 days", allowDownload: true, viewCount: 0, lastViewed: null, createdBy: "Ama Owusu" },
+    { id: "l3", label: "Church office screen", covers: "The whole gallery", url: "https://example.com/s/ghi", status: "active", expiry: "Never expires", allowDownload: false, viewCount: 112, lastViewed: "Wed, Oct 15, 11:02 AM", createdBy: "Ama Owusu" },
+    { id: "l4", label: "Visiting speaker", covers: "Preacher from Sunday Service, Sun, Sep 28, 2025", url: "https://example.com/s/jkl", status: "expired", expiry: "Expired", allowDownload: true, viewCount: 4, lastViewed: "Tue, Sep 30, 4:15 PM", createdBy: "Ama Owusu" },
+  ],
+};
+
+export const previewShare: ShareData = {
+  token: "preview",
+  title: "Baptism",
+  subtitle: "From every service",
+  totalFiles: 148,
+  allowDownload: true,
+  categories: [],
+  activeCategory: null,
+  items: galleryItems.map((item) => ({ ...item, caption: "Baptism · Sunday Service · Sun, Oct 12, 2025", uploadedBy: null })),
+  page: 1,
+  hasNextPage: true,
 };

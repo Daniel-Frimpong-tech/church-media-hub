@@ -75,3 +75,24 @@ test("the login page explains when an account is not invited", async ({
     page.getByRole("alert").filter({ hasText: "has not been invited" }),
   ).toBeVisible();
 });
+
+test("a share link that does not exist says so, without asking to sign in", async ({
+  page,
+}) => {
+  await page.goto(`/s/${"a".repeat(43)}`);
+  await expect(page).toHaveURL(/\/s\//);
+  await expect(
+    page.getByRole("heading", { name: "This link is not available" }),
+  ).toBeVisible();
+});
+
+test("share link files cannot be fetched with a made-up token", async ({ request }) => {
+  const id = "986a261f-e7e0-4f77-b376-10f477daa7d0";
+  for (const path of [
+    `/api/share/${"a".repeat(43)}/thumb/${id}`,
+    `/api/share/${"a".repeat(43)}/file/${id}`,
+    `/api/share/short/thumb/${id}`,
+  ]) {
+    expect((await request.get(path, { maxRedirects: 0 })).status(), path).toBe(404);
+  }
+});

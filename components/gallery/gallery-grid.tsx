@@ -10,20 +10,27 @@ import { formatBytes } from "@/lib/domain/uploads";
 import type { GalleryItem } from "./types";
 
 const thumbUrl = (item: GalleryItem, size: 400 | 1600) =>
-  item.preview
+  item.urls
     ? size === 400
-      ? item.preview.small
-      : item.preview.large
+      ? item.urls.small
+      : item.urls.large
     : `/api/thumb/${item.id}?size=${size}`;
+const downloadUrl = (item: GalleryItem) =>
+  item.urls ? item.urls.download : `/api/files/${item.id}`;
+const viewUrl = (item: GalleryItem) =>
+  item.urls ? item.urls.view : `/api/files/${item.id}?as=view`;
 
 /** A photo-album grid. Tap a tile to see it full size, swipe or use arrows to move. */
 export function GalleryGrid({
   items,
   canDelete = false,
+  shared = false,
 }: {
   items: GalleryItem[];
   /** Admins get a Delete button in the full-size view. */
   canDelete?: boolean;
+  /** True on a share link, where the visitor has no account. */
+  shared?: boolean;
 }) {
   const [requestedIndex, setOpenIndex] = useState<number | null>(null);
   // After a delete the list is shorter. If the open position no longer exists
@@ -47,6 +54,7 @@ export function GalleryGrid({
           onChange={setOpenIndex}
           onClose={() => setOpenIndex(null)}
           canDelete={canDelete}
+          shared={shared}
         />
       ) : null}
     </>
@@ -96,12 +104,14 @@ function Lightbox({
   onChange,
   onClose,
   canDelete,
+  shared,
 }: {
   items: GalleryItem[];
   index: number;
   onChange: (index: number) => void;
   onClose: () => void;
   canDelete: boolean;
+  shared: boolean;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const touchStartX = useRef<number | null>(null);
@@ -133,6 +143,8 @@ function Lightbox({
   }, [go]);
 
   const opensInDrive = item.sizeBytes > DIRECT_DOWNLOAD_MAX_BYTES;
+  const download = downloadUrl(item);
+  const view = viewUrl(item);
 
   return (
     <dialog
@@ -204,35 +216,40 @@ function Lightbox({
               {formatBytes(item.sizeBytes)}
             </span>
           </div>
-          <div className="flex flex-wrap gap-2 tablet:max-w-md">
-            {item.isVideo ? (
-              <a
-                href={`/api/files/${item.id}?as=view`}
-                target="_blank"
-                rel="noreferrer"
-                className={buttonClasses("primary", "md", "flex-1")}
-              >
-                Play in Google Drive
-              </a>
-            ) : null}
-            <a
-              href={`/api/files/${item.id}`}
-              {...(opensInDrive
-                ? { target: "_blank", rel: "noreferrer" }
-                : { download: item.fileName })}
-              className={
-                item.isVideo
-                  ? "flex h-12 flex-1 items-center justify-center rounded-sm border border-white/40 px-6 font-medium"
-                  : buttonClasses("primary", "md", "flex-1")
-              }
-            >
-              {opensInDrive ? "Download from Drive" : "Download"}
-            </a>
-          </div>
-          {item.isVideo || opensInDrive ? (
+          {download || (item.isVideo && view) ? (
+            <div className="flex flex-wrap gap-2 tablet:max-w-md">
+              {item.isVideo && view ? (
+                <a
+                  href={view}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={buttonClasses("primary", "md", "flex-1")}
+                >
+                  Play in Google Drive
+                </a>
+              ) : null}
+              {download ? (
+                <a
+                  href={download}
+                  {...(opensInDrive
+                    ? { target: "_blank", rel: "noreferrer" }
+                    : { download: item.fileName })}
+                  className={
+                    item.isVideo && view
+                      ? "flex h-12 flex-1 items-center justify-center rounded-full border border-white/40 px-6 text-body-sm font-bold"
+                      : buttonClasses("primary", "md", "flex-1")
+                  }
+                >
+                  {opensInDrive ? "Download from Drive" : "Download"}
+                </a>
+              ) : null}
+            </div>
+          ) : null}
+          {(item.isVideo && view) || (download && opensInDrive) ? (
             <p className="text-caption text-white/70">
-              Opens in Google Drive. Use the same Google account you sign in
-              here with.
+              {shared
+                ? "Opens in Google Drive."
+                : "Opens in Google Drive. Use the same Google account you sign in here with."}
             </p>
           ) : null}
           {canDelete ? (
