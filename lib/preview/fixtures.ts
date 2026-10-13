@@ -1,5 +1,9 @@
 import type { DashboardData } from "@/components/dashboard/types";
-import type { ShellUser } from "@/components/shell/app-shell";
+import type { AlbumData } from "@/components/gallery/album-view";
+import type { GalleryData } from "@/components/gallery/gallery-view";
+import type { GalleryItem } from "@/components/gallery/types";
+import type { ServiceData, ServiceSummary } from "@/components/services/types";
+import type { ShellUpload, ShellUser } from "@/components/shell/app-shell";
 import type { HandoffRow } from "@/lib/handoffs";
 
 /**
@@ -168,4 +172,177 @@ export const previewEmptyDashboard: DashboardData = {
   recentUploads: [],
   upcoming: [],
   analytics: null,
+};
+
+const CATEGORIES = [
+  { id: "c1", name: "Baptism" },
+  { id: "c2", name: "Preacher" },
+  { id: "c3", name: "Fellowship" },
+  { id: "c4", name: "Videos" },
+];
+
+export const previewUpload: ShellUpload = {
+  defaultServiceId: "s1",
+  services: [
+    { id: "s1", name: "Sunday Service", dateLine: "Sun, Oct 12", relative: "3 days ago", categories: CATEGORIES },
+    { id: "s2", name: "Midweek Prayer", dateLine: "Wed, Oct 15", relative: "Today", categories: CATEGORIES },
+    { id: "s3", name: "Sunday Service", dateLine: "Sun, Oct 19", relative: "In 4 days", categories: CATEGORIES },
+  ],
+};
+
+// ── Part 2 screens ──────────────────────────────────────────────────────────
+
+export const previewService: ServiceData = {
+  id: "s1",
+  name: "Sunday Service",
+  dateLine: "Sun, Oct 12, 2025 · 10:00 AM",
+  relative: "3 days ago",
+  totalFiles: 184,
+  canManage: true,
+  canUpload: true,
+  isAdmin: true,
+  isViewer: false,
+  folderProblem: null,
+  driveUrl: "https://drive.google.com/",
+  albums: [
+    {
+      categoryId: "c1",
+      slug: "baptism",
+      name: "Baptism",
+      fileCount: 42,
+      covers: [photo("m"), photo("n"), photo("o")],
+      hasFolder: true,
+      deliveries: [{ teamName: "Social Media", stage: "ready" }],
+    },
+    {
+      categoryId: "c2",
+      slug: "preacher",
+      name: "Preacher",
+      fileCount: 96,
+      covers: [photo("p"), photo("q"), photo("r")],
+      hasFolder: true,
+      deliveries: [{ teamName: "Thumbnails", stage: "delivered" }],
+    },
+    {
+      categoryId: "c3",
+      slug: "fellowship",
+      name: "Fellowship",
+      fileCount: 0,
+      covers: [],
+      hasFolder: true,
+      deliveries: [{ teamName: "Social Media", stage: "waiting" }],
+    },
+    {
+      categoryId: "c4",
+      slug: "videos",
+      name: "Videos",
+      fileCount: 46,
+      covers: [photo("s"), photo("t")],
+      hasFolder: true,
+      deliveries: [{ teamName: "Website", stage: "late" }],
+    },
+  ],
+  people: [
+    {
+      assignmentId: "a1",
+      name: "Grace Mensah",
+      roleName: "Photographer",
+      isMe: false,
+      tasks: [
+        { categoryId: "c2", categoryName: "Preacher", state: "done" },
+        { categoryId: "c1", categoryName: "Baptism", state: "done" },
+      ],
+    },
+    {
+      assignmentId: "a2",
+      name: "Sam Boateng",
+      roleName: "Videographer",
+      isMe: false,
+      tasks: [{ categoryId: "c4", categoryName: "Videos", state: "uploaded" }],
+    },
+    {
+      assignmentId: "a3",
+      name: "Kofi Asante",
+      roleName: "Photographer",
+      isMe: false,
+      tasks: [{ categoryId: "c3", categoryName: "Fellowship", state: "missing" }],
+    },
+  ],
+  hasOutstanding: true,
+  assignOptions: {
+    people: [
+      { id: "p1", name: "Grace Mensah" },
+      { id: "p2", name: "Sam Boateng" },
+    ],
+    dutyRoles: [
+      { id: "r1", name: "Photographer" },
+      { id: "r2", name: "Videographer" },
+    ],
+    categories: CATEGORIES,
+  },
+  handoffs: previewDashboard.handoffs,
+};
+
+const summary = (overrides: Partial<ServiceSummary>): ServiceSummary => ({
+  id: "s1",
+  name: "Sunday Service",
+  dateLine: "Sun, Oct 12, 2025 · 10:00 AM",
+  relative: "3 days ago",
+  cover: photo("a"),
+  day: "12",
+  month: "OCT",
+  weekday: "SUN",
+  fileCount: 184,
+  assigned: ["Grace Mensah", "Sam Boateng", "Kofi Asante"],
+  missing: 0,
+  foldersFailed: false,
+  ...overrides,
+});
+
+export const previewServiceList = {
+  upcoming: [
+    summary({ id: "s2", name: "Midweek Prayer", dateLine: "Wed, Oct 15, 2025 · 7:30 PM", relative: "Today", cover: null, day: "15", weekday: "WED", fileCount: 0, assigned: ["Sam Boateng"] }),
+    summary({ id: "s3", dateLine: "Sun, Oct 19, 2025 · 10:00 AM", relative: "In 4 days", cover: null, day: "19", fileCount: 0, missing: 5, assigned: ["Grace Mensah", "Sam Boateng", "Kofi Asante", "Ama Owusu"] }),
+    summary({ id: "s4", name: "Baptism Sunday", dateLine: "Sun, Oct 26, 2025 · 10:00 AM", relative: "In 11 days", cover: null, day: "26", fileCount: 0, assigned: [] }),
+  ],
+  past: [
+    summary({ missing: 1 }),
+    summary({ id: "s5", name: "Midweek Prayer", dateLine: "Wed, Oct 8, 2025 · 7:30 PM", relative: "7 days ago", cover: photo("u"), fileCount: 38, assigned: ["Sam Boateng"] }),
+    summary({ id: "s6", dateLine: "Sun, Oct 5, 2025 · 10:00 AM", relative: "10 days ago", cover: photo("v"), fileCount: 287 }),
+    summary({ id: "s7", name: "Youth Night", dateLine: "Fri, Oct 3, 2025 · 7:00 PM", relative: "12 days ago", cover: photo("w"), fileCount: 121, assigned: ["Kofi Asante"] }),
+    summary({ id: "s8", dateLine: "Sun, Sep 28, 2025 · 10:00 AM", relative: "17 days ago", cover: photo("x"), fileCount: 341 }),
+  ],
+};
+
+const galleryItems: GalleryItem[] = Array.from({ length: 23 }, (_, index) => ({
+  id: `g${index}`,
+  fileName: `IMG_${4100 + index}.jpg`,
+  isVideo: index % 7 === 3,
+  sizeBytes: (index % 7 === 3 ? 180 : 6) * 1024 * 1024,
+  caption: "Preacher · Sunday Service · Sun, Oct 12, 2025",
+  uploadedBy: "Grace Mensah",
+  preview: { small: photo(`g${index}`), large: photo(`g${index}`, 1200) },
+}));
+
+export const previewAlbum: AlbumData = {
+  serviceId: "s1",
+  serviceName: "Sunday Service",
+  categoryId: "c2",
+  categoryName: "Preacher",
+  dateLine: "Sun, Oct 12, 2025",
+  items: galleryItems,
+  canUpload: true,
+  canDelete: true,
+};
+
+export const previewGallery: GalleryData = {
+  filters: { categoryId: "c2", serviceId: null, from: null, to: null, page: 1 },
+  categories: CATEGORIES,
+  services: [
+    { id: "s1", label: "Sun, Oct 12, 2025 · Sunday Service" },
+    { id: "s5", label: "Wed, Oct 8, 2025 · Midweek Prayer" },
+  ],
+  items: galleryItems,
+  hasNextPage: true,
+  canDelete: true,
 };

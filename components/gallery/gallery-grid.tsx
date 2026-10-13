@@ -1,5 +1,6 @@
 "use client";
 
+import { Play } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { deleteUpload } from "@/app/(app)/services/actions";
 import { ActionButton } from "@/components/ui/action-button";
@@ -8,7 +9,12 @@ import { DIRECT_DOWNLOAD_MAX_BYTES } from "@/lib/domain/gallery";
 import { formatBytes } from "@/lib/domain/uploads";
 import type { GalleryItem } from "./types";
 
-const thumbUrl = (id: string, size: 400 | 1600) => `/api/thumb/${id}?size=${size}`;
+const thumbUrl = (item: GalleryItem, size: 400 | 1600) =>
+  item.preview
+    ? size === 400
+      ? item.preview.small
+      : item.preview.large
+    : `/api/thumb/${item.id}?size=${size}`;
 
 /** A photo-album grid. Tap a tile to see it full size, swipe or use arrows to move. */
 export function GalleryGrid({
@@ -27,7 +33,7 @@ export function GalleryGrid({
 
   return (
     <>
-      <ul className="grid grid-cols-3 gap-1 tablet:grid-cols-4 tablet:gap-2 desktop:grid-cols-6">
+      <ul className="grid grid-cols-3 gap-1.5 tablet:grid-cols-4 tablet:gap-2 desktop:grid-cols-5">
         {items.map((item, index) => (
           <li key={item.id}>
             <Tile item={item} onOpen={() => setOpenIndex(index)} />
@@ -55,7 +61,7 @@ function Tile({ item, onOpen }: { item: GalleryItem; onOpen: () => void }) {
       type="button"
       onClick={onOpen}
       aria-label={`Open ${item.fileName}`}
-      className="relative block aspect-square w-full overflow-hidden rounded-xs bg-surface-strong tablet:rounded-sm"
+      className="group relative block aspect-square w-full overflow-hidden rounded-sm bg-surface-strong tablet:rounded-md"
     >
       {failed ? (
         <span className="flex h-full items-center justify-center p-2 text-center text-caption break-all text-muted">
@@ -66,17 +72,18 @@ function Tile({ item, onOpen }: { item: GalleryItem; onOpen: () => void }) {
         // next/image would spend the free image-optimisation allowance.
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={thumbUrl(item.id, 400)}
+          src={thumbUrl(item, 400)}
           alt=""
           loading="lazy"
           decoding="async"
           onError={() => setFailed(true)}
-          className="h-full w-full object-cover"
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
       )}
       {item.isVideo ? (
-        <span className="absolute bottom-1 left-1 rounded-full bg-black/70 px-2 py-0.5 text-badge text-white">
-          Video
+        <span className="absolute right-1.5 bottom-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-black/70 text-white">
+          <Play aria-hidden size={14} fill="currentColor" />
+          <span className="sr-only">Video</span>
         </span>
       ) : null}
     </button>
@@ -197,7 +204,7 @@ function Lightbox({
               {formatBytes(item.sizeBytes)}
             </span>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 tablet:max-w-md">
             {item.isVideo ? (
               <a
                 href={`/api/files/${item.id}?as=view`}
@@ -261,7 +268,7 @@ function LightboxImage({ item }: { item: GalleryItem }) {
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={thumbUrl(item.id, 1600)}
+      src={thumbUrl(item, 1600)}
       alt={item.fileName}
       onError={() => setFailed(true)}
       className="max-h-full max-w-full object-contain"

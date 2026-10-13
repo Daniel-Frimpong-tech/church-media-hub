@@ -57,6 +57,13 @@ async function settle(queue: UploadQueue): Promise<UploadItem[]> {
   return queue.getSnapshot();
 }
 
+const TARGET = {
+  serviceId: "service-1",
+  serviceName: "Sunday Service",
+  categoryId: "category-1",
+  categoryName: "Preacher",
+};
+
 const SESSION = {
   status: 200,
   body: { uploadId: "upload-row-1", sessionUrl: "https://session.example/1" },
@@ -92,8 +99,8 @@ describe("UploadQueue", () => {
     apiReplies["/api/uploads/complete"] = [COMPLETE_OK];
     chunkReplies = [{ status: 200, body: '{"id":"drive-file-1"}' }];
 
-    const queue = new UploadQueue("service-1");
-    queue.add([photo("a.jpg", 1000)], "category-1");
+    const queue = new UploadQueue();
+    queue.add([photo("a.jpg", 1000)], TARGET);
     const [item] = await settle(queue);
 
     expect(item.status).toBe("done");
@@ -120,8 +127,8 @@ describe("UploadQueue", () => {
     apiReplies["/api/uploads/complete"] = [COMPLETE_OK];
     chunkReplies = [{ status: 308 }, { status: 201, body: '{"id":"drive-file-1"}' }];
 
-    const queue = new UploadQueue("service-1");
-    queue.add([photo("big.mp4", size, "video/mp4")], "category-1");
+    const queue = new UploadQueue();
+    queue.add([photo("big.mp4", size, "video/mp4")], TARGET);
     const [item] = await settle(queue);
 
     expect(item.status).toBe("done");
@@ -145,8 +152,8 @@ describe("UploadQueue", () => {
       { status: 200, body: '{"id":"drive-file-1"}' },
     ];
 
-    const queue = new UploadQueue("service-1");
-    queue.add([photo("big.mp4", size, "video/mp4")], "category-1");
+    const queue = new UploadQueue();
+    queue.add([photo("big.mp4", size, "video/mp4")], TARGET);
     const [item] = await settle(queue);
 
     expect(item.status).toBe("done");
@@ -163,8 +170,8 @@ describe("UploadQueue", () => {
     apiReplies["/api/uploads/complete"] = [COMPLETE_OK];
     chunkReplies = [{ status: 308 }, { status: 200, body: '{"id":"drive-file-1"}' }];
 
-    const queue = new UploadQueue("service-1");
-    queue.add([photo("a.jpg", 1000)], "category-1");
+    const queue = new UploadQueue();
+    queue.add([photo("a.jpg", 1000)], TARGET);
     const [item] = await settle(queue);
 
     expect(item.status).toBe("done");
@@ -180,8 +187,8 @@ describe("UploadQueue", () => {
     // The bytes arrived but the reply was lost.
     chunkReplies = ["network-error"];
 
-    const queue = new UploadQueue("service-1");
-    queue.add([photo("a.jpg", 1000)], "category-1");
+    const queue = new UploadQueue();
+    queue.add([photo("a.jpg", 1000)], TARGET);
     const [item] = await settle(queue);
 
     expect(item.status).toBe("done");
@@ -202,8 +209,8 @@ describe("UploadQueue", () => {
     apiReplies["/api/uploads/complete"] = [COMPLETE_OK];
     chunkReplies = [{ status: 503 }, { status: 200, body: '{"id":"drive-file-2"}' }];
 
-    const queue = new UploadQueue("service-1");
-    queue.add([photo("a.jpg", 1000)], "category-1");
+    const queue = new UploadQueue();
+    queue.add([photo("a.jpg", 1000)], TARGET);
     const [item] = await settle(queue);
 
     expect(item.status).toBe("done");
@@ -217,8 +224,8 @@ describe("UploadQueue", () => {
     apiReplies["/api/uploads/session"] = [SESSION];
     chunkReplies = ["network-error", "network-error", "network-error", "network-error"];
 
-    const queue = new UploadQueue("service-1");
-    queue.add([photo("a.jpg", 1000)], "category-1");
+    const queue = new UploadQueue();
+    queue.add([photo("a.jpg", 1000)], TARGET);
     let [item] = await settle(queue);
 
     expect(item.status).toBe("error");
@@ -236,8 +243,8 @@ describe("UploadQueue", () => {
   });
 
   it("rejects a file that is not a photo or video without calling the server", async () => {
-    const queue = new UploadQueue("service-1");
-    queue.add([photo("notes.pdf", 1000, "application/pdf")], "category-1");
+    const queue = new UploadQueue();
+    queue.add([photo("notes.pdf", 1000, "application/pdf")], TARGET);
     const [item] = await settle(queue);
 
     expect(item).toMatchObject({
@@ -261,8 +268,8 @@ describe("UploadQueue", () => {
       },
     ];
 
-    const queue = new UploadQueue("service-1");
-    queue.add([photo("a.jpg", 1000)], "category-1");
+    const queue = new UploadQueue();
+    queue.add([photo("a.jpg", 1000)], TARGET);
     const [item] = await settle(queue);
 
     expect(item.status).toBe("error");
@@ -282,11 +289,8 @@ describe("UploadQueue", () => {
       { status: 200, body: '{"id":"drive-file-3"}' },
     ];
 
-    const queue = new UploadQueue("service-1");
-    queue.add(
-      [photo("a.jpg", 1000), photo("b.jpg", 1000), photo("c.jpg", 1000)],
-      "category-1",
-    );
+    const queue = new UploadQueue();
+    queue.add([photo("a.jpg", 1000), photo("b.jpg", 1000), photo("c.jpg", 1000)], TARGET);
     const items = await settle(queue);
 
     expect(items.map((item) => item.status).sort()).toEqual(["done", "done", "error"]);

@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { GalleryGrid } from "@/components/gallery/gallery-grid";
+import { AlbumView } from "@/components/gallery/album-view";
 import { requireProfile } from "@/lib/auth";
+import { can } from "@/lib/domain/permissions";
 import { formatChurchDate } from "@/lib/domain/time";
 import { GALLERY_COLUMNS, toGalleryItems } from "@/lib/gallery";
 import { createClient } from "@/lib/supabase/server";
@@ -42,25 +42,17 @@ export default async function AlbumPage({
   const items = await toGalleryItems(uploads.data);
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-1">
-        <Link href={`/services/${id}`} className="text-body-sm text-muted underline">
-          {service.data.name}
-        </Link>
-        <h1 className="text-display text-ink">{category.data.name}</h1>
-        <p className="text-body text-ink-soft">
-          {formatChurchDate(service.data.starts_at)} · {items.length}{" "}
-          {items.length === 1 ? "file" : "files"}
-        </p>
-      </div>
-
-      {items.length === 0 ? (
-        <p className="rounded-md bg-surface-soft p-6 text-body-sm text-muted">
-          Nothing here yet. Files appear as soon as they finish uploading.
-        </p>
-      ) : (
-        <GalleryGrid items={items} canDelete={profile.role === "admin"} />
-      )}
-    </div>
+    <AlbumView
+      data={{
+        serviceId: id,
+        serviceName: service.data.name,
+        categoryId: category.data.id,
+        categoryName: category.data.name,
+        dateLine: formatChurchDate(service.data.starts_at),
+        items,
+        canUpload: can(profile.role, "upload_media"),
+        canDelete: profile.role === "admin",
+      }}
+    />
   );
 }

@@ -8,11 +8,22 @@ import { checkUpload, nextChunk } from "@/lib/domain/uploads";
 
 export type UploadItemStatus = "queued" | "uploading" | "done" | "error";
 
+/** Where a batch of files is going. */
+export type UploadTarget = {
+  serviceId: string;
+  serviceName: string;
+  categoryId: string;
+  categoryName: string;
+};
+
 export type UploadItem = {
   id: string;
   fileName: string;
   size: number;
+  serviceId: string;
+  serviceName: string;
   categoryId: string;
+  categoryName: string;
   status: UploadItemStatus;
   /** Bytes Google has confirmed, plus progress on the chunk being sent. */
   sentBytes: number;
@@ -101,8 +112,6 @@ export class UploadQueue {
   private running = 0;
   private nextId = 1;
 
-  constructor(private readonly serviceId: string) {}
-
   // ── For useSyncExternalStore ──────────────────────────────────────────────
 
   subscribe = (listener: () => void): (() => void) => {
@@ -114,7 +123,7 @@ export class UploadQueue {
 
   // ── Actions ───────────────────────────────────────────────────────────────
 
-  add(files: File[], categoryId: string): void {
+  add(files: File[], target: UploadTarget): void {
     const added: UploadItem[] = files.map((file) => {
       const id = `upload-${this.nextId++}`;
       const check = checkUpload(file);
@@ -123,7 +132,7 @@ export class UploadQueue {
           id,
           fileName: file.name,
           size: file.size,
-          categoryId,
+          ...target,
           status: "error",
           sentBytes: 0,
           error: check.error,
@@ -135,7 +144,7 @@ export class UploadQueue {
         id,
         fileName: check.fileName,
         size: file.size,
-        categoryId,
+        ...target,
         status: "queued",
         sentBytes: 0,
         canRetry: true,
@@ -238,7 +247,7 @@ export class UploadQueue {
         const session = await postJson<{ uploadId: string; sessionUrl: string }>(
           "/api/uploads/session",
           {
-            serviceId: this.serviceId,
+            serviceId: item.serviceId,
             categoryId: item.categoryId,
             fileName: job.file.name,
             mimeType: job.mimeType,

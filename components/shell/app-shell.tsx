@@ -1,13 +1,20 @@
 "use client";
 
-import { LogOut, Menu, X } from "lucide-react";
+import { LogOut, Menu, Plus, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Avatar } from "@/components/ui/avatar";
+import {
+  UploadButton,
+  UploadProvider,
+  useUpload,
+  type UploadService,
+} from "@/components/upload/upload-provider";
 import { cn } from "@/lib/cn";
 import type { Role } from "@/lib/domain/permissions";
 import { ROLE_LABELS } from "@/lib/domain/roles";
+import { can } from "@/lib/domain/permissions";
 import { adminNavFor, isActive, MAIN_NAV, type NavLink } from "@/lib/nav";
 import { NavIcon } from "./nav-icon";
 
@@ -19,14 +26,51 @@ export type ShellUser = { name: string; email: string; role: Role };
  * Desktop: a sidebar with every section one click away.
  * Phone: a slim top bar and a thumb-reach tab bar; "More" opens the rest.
  */
+/** What the upload sheet offers. Null for people who cannot upload. */
+export type ShellUpload = {
+  services: UploadService[];
+  defaultServiceId: string | null;
+  /** Used by preview pages to show the sheet open. */
+  initiallyOpen?: boolean;
+};
+
 export function AppShell({
+  user,
+  upload,
+  children,
+  currentPath,
+}: {
+  user: ShellUser;
+  upload: ShellUpload | null;
+  children: ReactNode;
+  /** Overrides the real path. Used by preview pages. */
+  currentPath?: string;
+}) {
+  const frame = (
+    <ShellFrame user={user} currentPath={currentPath}>
+      {children}
+    </ShellFrame>
+  );
+  if (!upload) return frame;
+  return (
+    <UploadProvider
+      services={upload.services}
+      defaultServiceId={upload.defaultServiceId}
+      canCreateService={can(user.role, "manage_services")}
+      initiallyOpen={upload.initiallyOpen}
+    >
+      {frame}
+    </UploadProvider>
+  );
+}
+
+function ShellFrame({
   user,
   children,
   currentPath,
 }: {
   user: ShellUser;
   children: ReactNode;
-  /** Overrides the real path. Used by preview pages. */
   currentPath?: string;
 }) {
   const realPath = usePathname();
@@ -37,6 +81,8 @@ export function AppShell({
     <div className="flex min-h-dvh flex-1">
       <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 flex-col gap-6 overflow-y-auto border-r border-hairline-soft bg-canvas p-4 desktop:flex">
         <Brand />
+        {/* Renders nothing for people who cannot upload. */}
+        <UploadButton className="w-full" />
         <nav aria-label="Main" className="flex flex-col gap-1">
           {MAIN_NAV.map((link) => (
             <SidebarLink key={link.href} link={link} active={isActive(pathname, link.href)} />
@@ -142,9 +188,17 @@ function MobileTabs({
   adminNav: NavLink[];
   user: ShellUser;
 }) {
+  const upload = useUpload();
   const [open, setOpen] = useState(false);
   const sheet = useRef<HTMLDialogElement>(null);
-  const moreActive = adminNav.some((link) => isActive(pathname, link.href));
+
+  // Four slots beside "More". People who can upload get the Upload button in
+  // the middle, so Handoffs moves into More for them.
+  const tabs = upload ? MAIN_NAV.filter((link) => link.href !== "/handoffs") : MAIN_NAV;
+  const overflow = upload ? MAIN_NAV.filter((link) => link.href === "/handoffs") : [];
+  const moreLinks = [...overflow, ...adminNav];
+  const moreActive = moreLinks.some((link) => isActive(pathname, link.href));
+  const middle = Math.ceil(tabs.length / 2);
 
   useEffect(() => {
     const dialog = sheet.current;
@@ -153,35 +207,50 @@ function MobileTabs({
     if (!open && dialog.open) dialog.close();
   }, [open]);
 
+  const tab = (link: NavLink) => {
+    const active = isActive(pathname, link.href);
+    return (
+      <li key={link.href} className="flex-1">
+        <Link
+          href={link.href}
+          aria-current={active ? "page" : undefined}
+          className={cn(
+            "flex h-16 flex-col items-center justify-center gap-1 text-[0.6875rem] font-bold transition-colors",
+            active ? "text-ink" : "text-muted-soft",
+          )}
+        >
+          <NavIcon
+            name={link.icon}
+            size={22}
+            className={cn("transition-transform", active && "scale-110 text-primary")}
+          />
+          {link.label}
+        </Link>
+      </li>
+    );
+  };
+
   return (
     <>
       <nav
         aria-label="Main"
         className="fixed inset-x-0 bottom-0 z-20 border-t border-hairline-soft bg-canvas/90 pb-[env(safe-area-inset-bottom)] backdrop-blur desktop:hidden"
       >
-        <ul className="flex">
-          {MAIN_NAV.map((link) => {
-            const active = isActive(pathname, link.href);
-            return (
-              <li key={link.href} className="flex-1">
-                <Link
-                  href={link.href}
-                  aria-current={active ? "page" : undefined}
-                  className={cn(
-                    "flex h-16 flex-col items-center justify-center gap-1 text-[0.6875rem] font-bold transition-colors",
-                    active ? "text-ink" : "text-muted-soft",
-                  )}
-                >
-                  <NavIcon
-                    name={link.icon}
-                    size={22}
-                    className={cn("transition-transform", active && "scale-110 text-primary")}
-                  />
-                  {link.label}
-                </Link>
-              </li>
-            );
-          })}
+        <ul className="flex items-center">
+          {tabs.slice(0, upload ? middle : tabs.length).map(tab)}
+          {upload ? (
+            <li className="flex flex-1 justify-center">
+              <button
+                type="button"
+                onClick={() => upload.open()}
+                aria-label="Upload"
+                className="flex h-13 w-13 -translate-y-2 items-center justify-center rounded-full bg-primary text-on-primary shadow-float transition-transform active:scale-95"
+              >
+                <Plus aria-hidden size={26} strokeWidth={2.5} />
+              </button>
+            </li>
+          ) : null}
+          {upload ? tabs.slice(middle).map(tab) : null}
           <li className="flex-1">
             <button
               type="button"
@@ -222,24 +291,29 @@ function MobileTabs({
               <X aria-hidden size={18} />
             </button>
           </div>
+          {overflow.length > 0 ? (
+            <ul className="grid grid-cols-2 gap-2">
+              {overflow.map((link) => (
+                <SheetLink
+                  key={link.href}
+                  link={link}
+                  active={isActive(pathname, link.href)}
+                  onNavigate={() => setOpen(false)}
+                />
+              ))}
+            </ul>
+          ) : null}
           {adminNav.length > 0 ? (
             <nav aria-label="Admin" className="flex flex-col gap-1">
               <p className="px-3 pb-1 text-label text-muted-soft uppercase">Admin</p>
               <ul className="grid grid-cols-2 gap-2">
                 {adminNav.map((link) => (
-                  <li key={link.href}>
-                    <Link
-                      href={link.href}
-                      onClick={() => setOpen(false)}
-                      className={cn(
-                        "flex h-12 items-center gap-3 rounded-md bg-surface-soft px-3 text-body-sm font-bold",
-                        isActive(pathname, link.href) ? "text-primary" : "text-ink",
-                      )}
-                    >
-                      <NavIcon name={link.icon} size={18} />
-                      {link.label}
-                    </Link>
-                  </li>
+                  <SheetLink
+                    key={link.href}
+                    link={link}
+                    active={isActive(pathname, link.href)}
+                    onNavigate={() => setOpen(false)}
+                  />
                 ))}
               </ul>
             </nav>
@@ -248,5 +322,31 @@ function MobileTabs({
         </div>
       </dialog>
     </>
+  );
+}
+
+function SheetLink({
+  link,
+  active,
+  onNavigate,
+}: {
+  link: NavLink;
+  active: boolean;
+  onNavigate: () => void;
+}) {
+  return (
+    <li>
+      <Link
+        href={link.href}
+        onClick={onNavigate}
+        className={cn(
+          "flex h-12 items-center gap-3 rounded-md bg-surface-soft px-3 text-body-sm font-bold",
+          active ? "text-primary" : "text-ink",
+        )}
+      >
+        <NavIcon name={link.icon} size={18} />
+        {link.label}
+      </Link>
+    </li>
   );
 }

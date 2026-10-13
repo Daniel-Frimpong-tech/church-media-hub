@@ -105,16 +105,19 @@ test("create a service, upload a photo, and see it in the gallery", async ({
   await expect(page.getByRole("heading", { name: serviceName })).toBeVisible({
     timeout: 30_000,
   });
-  // Folders were created in (fake) Drive, so uploading is offered.
-  await expect(page.getByRole("heading", { name: "Upload" })).toBeVisible();
+  // Folders were created in (fake) Drive, so every album offers "add".
+  await expect(page.getByRole("button", { name: "Add to Preacher" })).toBeVisible();
   await expect(page.getByText("Drive folders are not ready")).toHaveCount(0);
 
   const serviceId = new URL(page.url()).pathname.split("/").pop() ?? "";
   expect(serviceId).toMatch(/^[0-9a-f-]{36}$/);
 
   // ── Upload a photo to Preacher ──
-  await page.getByRole("group", { name: "Upload to" }).getByText("Preacher").click();
-  await page.locator('input[type="file"]').setInputFiles({
+  // One tap on the album opens the upload sheet already pointed at it.
+  await page.getByRole("button", { name: "Add to Preacher" }).click();
+  const sheet = page.getByRole("dialog", { name: "Upload" });
+  await expect(sheet.getByText("Going to Preacher")).toBeVisible();
+  await sheet.locator('input[type="file"]').setInputFiles({
     name: "preacher-photo.png",
     mimeType: "image/png",
     buffer: PHOTO,
@@ -195,7 +198,9 @@ test("create a service, upload a photo, and see it in the gallery", async ({
 
   // ── Delete a service that has uploads ──
   await page.goto(`/services/${serviceId}`);
-  await page.locator('input[type="file"]').setInputFiles({
+  // The service's own Upload button this time (the first category is chosen).
+  await page.getByRole("main").getByRole("button", { name: "Upload", exact: true }).click();
+  await page.getByRole("dialog", { name: "Upload" }).locator('input[type="file"]').setInputFiles({
     name: "second-photo.png",
     mimeType: "image/png",
     buffer: PHOTO,

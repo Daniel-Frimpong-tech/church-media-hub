@@ -1,15 +1,9 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { GalleryGrid } from "@/components/gallery/gallery-grid";
-import { buttonClasses } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
+import { GalleryView } from "@/components/gallery/gallery-view";
 import { requireProfile } from "@/lib/auth";
 import {
   dateRangeBounds,
   GALLERY_PAGE_SIZE,
-  galleryHref,
-  hasFilters,
   parseGalleryFilters,
 } from "@/lib/domain/gallery";
 import { formatChurchDate } from "@/lib/domain/time";
@@ -52,105 +46,20 @@ export default async function GalleryPage({
 
   const hasNextPage = uploads.data.length > GALLERY_PAGE_SIZE;
   const items = await toGalleryItems(uploads.data.slice(0, GALLERY_PAGE_SIZE));
-  const filtered = hasFilters(filters);
 
   return (
-    <div className="flex flex-col gap-6">
-      <h1 className="text-display text-ink">Gallery</h1>
-
-      <form
-        action="/gallery"
-        className="grid grid-cols-2 items-end gap-3 rounded-md border border-hairline p-4 tablet:grid-cols-5"
-      >
-        <div className="col-span-2 tablet:col-span-1">
-          <Select
-            label="Category"
-            name="category"
-            defaultValue={filters.categoryId ?? ""}
-          >
-            <option value="">All categories</option>
-            {(categories.data ?? []).map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </Select>
-        </div>
-        <div className="col-span-2 tablet:col-span-1">
-          <Select
-            label="Service"
-            name="service"
-            defaultValue={filters.serviceId ?? ""}
-          >
-            <option value="">All services</option>
-            {(services.data ?? []).map((service) => (
-              <option key={service.id} value={service.id}>
-                {formatChurchDate(service.starts_at)} · {service.name}
-              </option>
-            ))}
-          </Select>
-        </div>
-        <Input
-          label="From"
-          name="from"
-          type="date"
-          defaultValue={filters.from ?? ""}
-          className="h-12"
-        />
-        <Input
-          label="To"
-          name="to"
-          type="date"
-          defaultValue={filters.to ?? ""}
-          className="h-12"
-        />
-        <div className="col-span-2 flex gap-2 tablet:col-span-1">
-          <button type="submit" className={buttonClasses("primary", "md", "flex-1")}>
-            Search
-          </button>
-          {filtered ? (
-            <Link href="/gallery" className={buttonClasses("ghost", "md")}>
-              Clear
-            </Link>
-          ) : null}
-        </div>
-      </form>
-
-      {items.length === 0 ? (
-        <p className="rounded-md bg-surface-soft p-6 text-body-sm text-muted">
-          {filtered
-            ? "Nothing matches those filters. Try a wider date range or another category."
-            : "No photos or videos yet. They appear here as soon as they are uploaded."}
-        </p>
-      ) : (
-        <GalleryGrid items={items} canDelete={profile.role === "admin"} />
-      )}
-
-      {filters.page > 1 || hasNextPage ? (
-        <nav aria-label="Pages" className="flex items-center justify-between gap-3">
-          {filters.page > 1 ? (
-            <Link
-              href={galleryHref(filters, filters.page - 1)}
-              className={buttonClasses("secondary")}
-            >
-              Newer
-            </Link>
-          ) : (
-            <span />
-          )}
-          <span className="text-body-sm text-muted">Page {filters.page}</span>
-          {hasNextPage ? (
-            <Link
-              href={galleryHref(filters, filters.page + 1)}
-              className={buttonClasses("secondary")}
-            >
-              Older
-            </Link>
-          ) : (
-            <span />
-          )}
-        </nav>
-      ) : null}
-    </div>
+    <GalleryView
+      data={{
+        filters,
+        categories: categories.data ?? [],
+        services: (services.data ?? []).map((service) => ({
+          id: service.id,
+          label: `${formatChurchDate(service.starts_at)} · ${service.name}`,
+        })),
+        items,
+        hasNextPage,
+        canDelete: profile.role === "admin",
+      }}
+    />
   );
 }

@@ -773,3 +773,60 @@ to every bar, and the column chart has the same data as a hidden table.
 amount. Using a different colour per category would add decoration without
 adding information, since the labels already say which is which, and it would
 make the charts harder to read for colour-blind people.
+
+## Redesign, part 2: fewer clicks
+
+### Uploading is available everywhere, not on one page
+
+**Choice:** One upload sheet, opened from an Upload button in the sidebar, a
+round button in the middle of the phone tab bar, and "add" buttons on each
+service and album. It lives in the app shell, with a single queue for the whole
+session, so uploads continue while the person moves between pages. A small pill
+shows progress when the sheet is closed.
+
+**Why:** Uploading is the reason most people open the app, and it used to take
+four steps: open Services, find the service, scroll to the upload card, pick a
+category. Now it is one tap from anywhere, with the most likely service already
+chosen. Keeping the queue in the shell (which Next.js does not re-render on
+navigation) is what lets a video keep uploading while someone checks the
+gallery.
+
+### The sheet never guesses which service you meant
+
+**Choice:** The sheet starts with a short list: services from the last two
+weeks and the coming week. If Upload is tapped for a service that is not in
+that list (an older one, or one created a moment ago), the sheet fetches that
+service before showing anything. If it cannot take uploads, it says so.
+
+**Why:** The obvious shortcut, falling back to the first service in the list,
+would send someone's files to the wrong service without telling them. A wrong
+destination is worse than a short wait.
+
+### Albums instead of a list of categories
+
+**Choice:** A service page shows each category as an album card with its newest
+photos, its file count, where it is being delivered and how that is going, and
+an add button. The team, their tasks and the handoffs sit beside the albums on
+a computer and below them on a phone.
+
+**Why:** The old page was six stacked cards of text. The things people look for
+(is there anything in Preacher yet, has Thumbnails got theirs) needed reading
+several of them. Photos answer the first at a glance and the delivery chip
+answers the second, on the card itself.
+
+### Category chips in the gallery
+
+**Choice:** The gallery's category filter is a row of chips that apply
+instantly. Service and date filters are folded behind "Service and dates".
+
+**Why:** Category is the filter people use most ("show me baptisms"). It used
+to need a dropdown and a Search button. The less common filters are still
+there without taking up the screen.
+
+### A service with no photos shows its date as the cover
+
+**Choice:** In the services list, a service without any photos shows a
+calendar-style tile with its day, month and weekday.
+
+**Why:** Upcoming services never have photos, so the list was a row of empty
+grey squares. The date is the most useful thing to show in their place.
