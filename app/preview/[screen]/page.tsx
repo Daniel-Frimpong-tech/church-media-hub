@@ -1,5 +1,8 @@
 import { notFound } from "next/navigation";
 import { CategoriesView } from "@/components/admin/categories-view";
+import { PeopleView } from "@/components/admin/people-view";
+import { ScheduleView } from "@/components/admin/schedule-view";
+import { TeamsView } from "@/components/admin/teams-view";
 import { LoginView } from "@/components/auth/login-view";
 import { DashboardView } from "@/components/dashboard/dashboard-view";
 import { AlbumView } from "@/components/gallery/album-view";
@@ -12,8 +15,11 @@ import {
   previewCategories,
   previewDashboard,
   previewGallery,
+  previewPeople,
+  previewSchedule,
   previewService,
   previewServiceList,
+  previewTeams,
   previewEmptyDashboard,
   previewUpload,
   previewUser,
@@ -121,6 +127,24 @@ export default async function PreviewPage({
       return (
         <AppShell user={previewUser} upload={previewUpload} currentPath="/admin/categories">
           <CategoriesView data={{ ...previewCategories, openCategoryId: "c2" }} />
+        </AppShell>
+      );
+    case "teams":
+      return (
+        <AppShell user={previewUser} upload={previewUpload} currentPath="/admin/teams">
+          <TeamsView data={previewTeams} />
+        </AppShell>
+      );
+    case "people":
+      return (
+        <AppShell user={previewUser} upload={previewUpload} currentPath="/admin/people">
+          <PeopleView data={previewPeople} />
+        </AppShell>
+      );
+    case "schedule":
+      return (
+        <AppShell user={previewUser} upload={previewUpload} currentPath="/admin/schedule">
+          <ScheduleView data={previewSchedule} />
         </AppShell>
       );
     default:

@@ -110,7 +110,7 @@ function Folder({
           <span
             aria-hidden
             className={cn(
-              "ml-0 h-3 w-2/5 rounded-t-md transition-colors group-hover:bg-surface-soft",
+              "h-4 w-2/5 rounded-t-lg transition-colors group-hover:bg-surface-soft",
               tone,
             )}
           />

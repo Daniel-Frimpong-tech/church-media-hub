@@ -1,4 +1,7 @@
 import type { CategoriesData } from "@/components/admin/categories-view";
+import type { PeopleData } from "@/components/admin/people-view";
+import type { ScheduleData } from "@/components/admin/schedule-view";
+import type { TeamsData } from "@/components/admin/teams-view";
 import type { DashboardData } from "@/components/dashboard/types";
 import type { AlbumData } from "@/components/gallery/album-view";
 import type { GalleryData } from "@/components/gallery/gallery-view";
@@ -366,4 +369,63 @@ export const previewCategories: CategoriesData = {
     { id: "c5", name: "Worship", isActive: true, deliveries: [], availableTeams: TEAMS },
     { id: "c6", name: "Kids Church", isActive: false, deliveries: [], availableTeams: TEAMS },
   ],
+};
+
+const person = (id: string, name: string) => ({ id, name });
+const ALL_PEOPLE = [
+  person("p1", "Ama Owusu"),
+  person("p2", "Grace Mensah"),
+  person("p3", "Sam Boateng"),
+  person("p4", "Kofi Asante"),
+  person("p5", "Tola Adeyemi"),
+  person("p6", "Ada Nwosu"),
+];
+
+export const previewTeams: TeamsData = {
+  teams: [
+    { id: "t1", name: "Media", kind: "media", members: ALL_PEOPLE.slice(0, 4), candidates: ALL_PEOPLE.slice(4), receives: [] },
+    { id: "t2", name: "Thumbnails", kind: "receiving", members: [ALL_PEOPLE[4]], candidates: ALL_PEOPLE.slice(0, 4), receives: ["Preacher"] },
+    { id: "t3", name: "Social Media", kind: "receiving", members: [ALL_PEOPLE[5], ALL_PEOPLE[3]], candidates: ALL_PEOPLE.slice(0, 3), receives: ["Baptism", "Fellowship"] },
+    { id: "t4", name: "Website", kind: "receiving", members: [], candidates: ALL_PEOPLE, receives: [] },
+  ],
+};
+
+export const previewPeople: PeopleData = {
+  teams: [],
+  invites: [
+    { email: "new.volunteer@example.com", role: "member", teamName: "Media" },
+    { email: "pastor.james@example.com", role: "viewer", teamName: "Website" },
+  ],
+  people: [
+    { id: "p1", name: "Ama Owusu", email: "ama.owusu@example.com", role: "admin", active: true, isSelf: true, teams: ["Media"], telegramLinked: true },
+    { id: "p2", name: "Grace Mensah", email: "grace.mensah@example.com", role: "member", active: true, isSelf: false, teams: ["Media"], telegramLinked: true },
+    { id: "p3", name: "Sam Boateng", email: "sam.boateng@example.com", role: "member", active: true, isSelf: false, teams: ["Media"], telegramLinked: false },
+    { id: "p4", name: "Kofi Asante", email: "kofi.asante@example.com", role: "member", active: true, isSelf: false, teams: ["Media", "Social Media"], telegramLinked: true },
+    { id: "p5", name: "Tola Adeyemi", email: "tola.adeyemi@example.com", role: "viewer", active: true, isSelf: false, teams: ["Thumbnails"], telegramLinked: false },
+    { id: "p6", name: "Ada Nwosu", email: "ada.nwosu@example.com", role: "viewer", active: true, isSelf: false, teams: [], telegramLinked: false },
+    { id: "p7", name: "Yaw Darko", email: "yaw.darko@example.com", role: "member", active: false, isSelf: false, teams: [], telegramLinked: false },
+  ],
+};
+
+export const previewSchedule: ScheduleData = {
+  series: [
+    { id: "r1", name: "Sunday Service", weekday: 0, timeLabel: "10:00 AM", active: true },
+    { id: "r2", name: "Midweek Prayer", weekday: 3, timeLabel: "7:30 PM", active: true },
+    { id: "r3", name: "Youth Night", weekday: 5, timeLabel: "7:00 PM", active: false },
+  ],
+  jobs: {
+    lastRanLabel: "Wed, Oct 15, 12:15 PM",
+    stale: false,
+    lastResult: {
+      servicesCreated: 1,
+      foldersFixed: 0,
+      reminders: 1,
+      readyNotices: 0,
+      lateNotices: 1,
+      telegramLinked: true,
+      driveAccessRemoved: 0,
+      uploadsClosed: 0,
+      failed: [],
+    },
+  },
 };

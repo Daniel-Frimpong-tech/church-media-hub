@@ -66,13 +66,13 @@ export function AvatarStack({ names, max = 4 }: { names: string[]; max?: number 
         <span
           key={name}
           style={{ zIndex: shown.length - index }}
-          className="relative -ml-1.5 rounded-full ring-2 ring-surface first:ml-0"
+          className="relative -ml-1 rounded-full ring-2 ring-surface first:ml-0"
         >
           <Avatar name={name} />
         </span>
       ))}
       {extra > 0 ? (
-        <span className="-ml-1.5 inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-surface-strong px-1.5 text-caption font-bold text-ink-soft ring-2 ring-surface">
+        <span className="-ml-1 inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-surface-strong px-1.5 text-caption font-bold text-ink-soft ring-2 ring-surface">
           +{extra}
         </span>
       ) : null}

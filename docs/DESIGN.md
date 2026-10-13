@@ -122,6 +122,12 @@ the tab bar and the rest are in the "More" sheet.
 - **`components/ui`**: `Button` (primary, secondary, ghost, danger; pill shaped),
   `Badge`, `Card`, `Input`, `Select`, `Avatar` and `AvatarStack` (initials on a
   tint that is always the same for a person), `ProgressRing`, `ActionButton`.
+- **`components/ui/modal.tsx`**: `Modal`, a button that opens a panel (a bottom
+  sheet on phones, a dialog on larger screens).
+- **`components/admin`**: the admin screens. Each kind of thing is a card that
+  looks like what it is (a folder for a category, a calendar tile for a weekly
+  service) in a grid, ending with a dashed "new" tile. Tapping a card opens its
+  controls in a panel.
 - **`components/shell`**: `AppShell`, the frame around every signed-in page.
 - **`components/upload`**: `UploadProvider` (the upload sheet, its queue and the
   floating progress pill, available on every page) and `UploadButton`, which
@@ -152,7 +158,8 @@ Charts follow a few fixed rules so they read the same everywhere.
 `/preview/<screen>` renders a real screen with sample data, with no sign-in and
 no database. Screens: `dashboard`, `dashboard-empty`, `dashboard-member`,
 `dashboard-viewer`, `service`, `services`, `album`, `gallery`, `upload` (the
-upload sheet open), `login` and `login-error`. They exist only in local development
+upload sheet open), `categories`, `category-open`, `teams`, `people`,
+`schedule`, `login` and `login-error`. They exist only in local development
 (`npm run dev`); on a deployed build they are a 404.
 
 ```bash

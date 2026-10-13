@@ -830,3 +830,29 @@ calendar-style tile with its day, month and weekday.
 
 **Why:** Upcoming services never have photos, so the list was a row of empty
 grey squares. The date is the most useful thing to show in their place.
+
+## Redesign, part 3: admin screens
+
+### Things look like what they are, several to a row
+
+**Choice:** Categories are drawn as folders (a tab, a name, and where the
+contents go). Teams and people are cards with avatars. Weekly services are
+calendar tiles showing the weekday and time. Each grid ends with a dashed
+"new" tile. Tapping a card opens a panel with its controls.
+
+**Why:** The first redesign pass left the admin screens as full-width rows of
+form fields: one category took a whole row, and its meaning (a folder every
+service gets) was not visible. A folder shape says what a category is before a
+word is read, and a grid shows the whole set at once. Moving the controls into
+a panel keeps each card small and readable; the settings are one tap away for
+the rare times they are changed.
+
+### One panel component
+
+**Choice:** `components/ui/modal.tsx` is a button that opens a panel: a sheet
+from the bottom on phones, a centred dialog on larger screens. It uses the
+browser's own `<dialog>` element.
+
+**Why:** The native dialog gives focus trapping, closing with Escape, and a
+backdrop for free, and is accessible without a library. Every admin card uses
+the same component, so they all behave the same way.
