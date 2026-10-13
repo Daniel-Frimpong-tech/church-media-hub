@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { CategoriesView } from "@/components/admin/categories-view";
 import { LoginView } from "@/components/auth/login-view";
 import { DashboardView } from "@/components/dashboard/dashboard-view";
 import { AlbumView } from "@/components/gallery/album-view";
@@ -8,6 +9,7 @@ import { ServiceView } from "@/components/services/service-view";
 import { AppShell } from "@/components/shell/app-shell";
 import {
   previewAlbum,
+  previewCategories,
   previewDashboard,
   previewGallery,
   previewService,
@@ -107,6 +109,18 @@ export default async function PreviewPage({
       return (
         <AppShell user={previewUser} upload={previewUpload} currentPath="/gallery">
           <GalleryView data={previewGallery} />
+        </AppShell>
+      );
+    case "categories":
+      return (
+        <AppShell user={previewUser} upload={previewUpload} currentPath="/admin/categories">
+          <CategoriesView data={previewCategories} />
+        </AppShell>
+      );
+    case "category-open":
+      return (
+        <AppShell user={previewUser} upload={previewUpload} currentPath="/admin/categories">
+          <CategoriesView data={{ ...previewCategories, openCategoryId: "c2" }} />
         </AppShell>
       );
     default:

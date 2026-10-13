@@ -1,3 +1,4 @@
+import type { CategoriesData } from "@/components/admin/categories-view";
 import type { DashboardData } from "@/components/dashboard/types";
 import type { AlbumData } from "@/components/gallery/album-view";
 import type { GalleryData } from "@/components/gallery/gallery-view";
@@ -345,4 +346,24 @@ export const previewGallery: GalleryData = {
   items: galleryItems,
   hasNextPage: true,
   canDelete: true,
+};
+
+// ── Admin screens ───────────────────────────────────────────────────────────
+
+const TEAMS = [
+  { id: "t2", name: "Thumbnails" },
+  { id: "t3", name: "Social Media" },
+  { id: "t4", name: "Website" },
+];
+
+export const previewCategories: CategoriesData = {
+  hasReceivingTeams: true,
+  categories: [
+    { id: "c1", name: "Baptism", isActive: true, deliveries: [{ teamId: "t3", teamName: "Social Media", deadlineHours: 48 }], availableTeams: [TEAMS[0], TEAMS[2]] },
+    { id: "c2", name: "Preacher", isActive: true, deliveries: [{ teamId: "t2", teamName: "Thumbnails", deadlineHours: 24 }, { teamId: "t4", teamName: "Website", deadlineHours: 72 }], availableTeams: [TEAMS[1]] },
+    { id: "c3", name: "Fellowship", isActive: true, deliveries: [{ teamId: "t3", teamName: "Social Media", deadlineHours: 48 }], availableTeams: [TEAMS[0], TEAMS[2]] },
+    { id: "c4", name: "Videos", isActive: true, deliveries: [{ teamId: "t4", teamName: "Website", deadlineHours: 72 }], availableTeams: [TEAMS[0], TEAMS[1]] },
+    { id: "c5", name: "Worship", isActive: true, deliveries: [], availableTeams: TEAMS },
+    { id: "c6", name: "Kids Church", isActive: false, deliveries: [], availableTeams: TEAMS },
+  ],
 };
