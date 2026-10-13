@@ -123,6 +123,12 @@ the tab bar and the rest are in the "More" sheet.
   `Badge`, `Card`, `Input`, `Select`, `Avatar` and `AvatarStack` (initials on a
   tint that is always the same for a person), `ProgressRing`, `ActionButton`.
 - **`components/shell`**: `AppShell`, the frame around every signed-in page.
+- **`components/upload`**: `UploadProvider` (the upload sheet, its queue and the
+  floating progress pill, available on every page) and `UploadButton`, which
+  opens the sheet already pointed at a service or category.
+- **`components/services`**, **`components/gallery`**, **`components/dashboard`**:
+  one "view" per screen. A view takes plain data and draws it; a loader in
+  `lib/` fetches that data. This split is what makes the previews possible.
 - **`components/charts`**: `ColumnChart`, `BarList`, `CountUp`.
 
 ## Charts
@@ -143,9 +149,10 @@ Charts follow a few fixed rules so they read the same everywhere.
 
 ## Previewing screens
 
-`/preview/dashboard`, `/preview/dashboard-empty`, `/preview/dashboard-member`,
-`/preview/login` and `/preview/login-error` render the real screens with sample
-data, with no sign-in and no database. They exist only in local development
+`/preview/<screen>` renders a real screen with sample data, with no sign-in and
+no database. Screens: `dashboard`, `dashboard-empty`, `dashboard-member`,
+`dashboard-viewer`, `service`, `services`, `album`, `gallery`, `upload` (the
+upload sheet open), `login` and `login-error`. They exist only in local development
 (`npm run dev`); on a deployed build they are a 404.
 
 ```bash

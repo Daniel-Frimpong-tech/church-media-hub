@@ -204,7 +204,7 @@ function Lightbox({
               {formatBytes(item.sizeBytes)}
             </span>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 tablet:max-w-md">
             {item.isVideo ? (
               <a
                 href={`/api/files/${item.id}?as=view`}
