@@ -325,7 +325,12 @@ const galleryItems: GalleryItem[] = Array.from({ length: 23 }, (_, index) => ({
   sizeBytes: (index % 7 === 3 ? 180 : 6) * 1024 * 1024,
   caption: "Preacher · Sunday Service · Sun, Oct 12, 2025",
   uploadedBy: "Grace Mensah",
-  preview: { small: photo(`g${index}`), large: photo(`g${index}`, 1200) },
+  urls: {
+    small: photo(`g${index}`),
+    large: photo(`g${index}`, 1200),
+    download: "#",
+    view: "#",
+  },
 }));
 
 export const previewAlbum: AlbumData = {
