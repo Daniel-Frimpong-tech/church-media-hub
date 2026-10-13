@@ -71,6 +71,7 @@ test.beforeAll(async () => {
 test("create a service, upload a photo, and see it in the gallery", async ({
   page,
   context,
+  browser,
   baseURL,
 }) => {
   // ── Sign in ──
@@ -133,7 +134,7 @@ test("create a service, upload a photo, and see it in the gallery", async ({
   });
   const { data: uploads } = await admin
     .from("uploads")
-    .select("uploaded_by, status, drive_file_id, size_bytes, file_name")
+    .select("id, uploaded_by, status, drive_file_id, size_bytes, file_name")
     .eq("service_id", serviceId);
   expect(uploads).toHaveLength(1);
   expect(uploads?.[0]).toMatchObject({
@@ -183,6 +184,66 @@ test("create a service, upload a photo, and see it in the gallery", async ({
   // A category nothing was uploaded to stays empty.
   await page.goto(`/services/${serviceId}/baptism`);
   await expect(page.getByText("Nothing here yet")).toBeVisible();
+
+  // ── Share the album with someone who has no account ──
+  const uploadId = uploads?.[0].id ?? "";
+  await page.goto(`/services/${serviceId}/preacher`);
+  await page.getByRole("button", { name: "Share" }).click();
+  const shareDialog = page.getByRole("dialog", { name: "Share" });
+  await shareDialog.getByLabel("Who is it for?").fill("Pastor James");
+  await shareDialog.getByRole("button", { name: "Create link" }).click();
+  const shareUrl = await shareDialog.getByLabel("Link", { exact: true }).inputValue();
+  expect(shareUrl).toMatch(/\/s\/[A-Za-z0-9_-]{43}$/);
+  const token = shareUrl.split("/s/")[1];
+
+  // A fresh browser with no session: this is the pastor opening the link.
+  const visitorContext = await browser.newContext();
+  const visitor = await visitorContext.newPage();
+  await visitor.goto(shareUrl);
+  await expect(visitor.getByRole("heading", { name: "Preacher" })).toBeVisible();
+  await expect(visitor.getByText("Shared with you")).toBeVisible();
+  const sharedTile = visitor.getByRole("button", { name: "Open preacher-photo.png" });
+  await expect
+    .poll(() =>
+      sharedTile.locator("img").evaluate((img: HTMLImageElement) => img.naturalWidth),
+    )
+    .toBeGreaterThan(0);
+
+  // They can download the original through the link…
+  const sharedFile = await visitorContext.request.get(
+    `${baseURL}/api/share/${token}/file/${uploadId}`,
+  );
+  expect(sharedFile.status()).toBe(200);
+  expect(Buffer.compare(await sharedFile.body(), PHOTO)).toBe(0);
+
+  // …but the link is the only thing that lets them in.
+  const wrongToken = await visitorContext.request.get(
+    `${baseURL}/api/share/${"x".repeat(43)}/thumb/${uploadId}`,
+  );
+  expect(wrongToken.status()).toBe(404);
+  const appRoute = await visitorContext.request.get(`${baseURL}/api/thumb/${uploadId}`, {
+    maxRedirects: 0,
+  });
+  expect(appRoute.status()).toBe(401);
+  await visitor.goto(`${baseURL}/dashboard`);
+  await expect(visitor).toHaveURL(/\/login/);
+
+  // The admin turns the link off, and it stops working at once.
+  await page.goto("/admin/shares");
+  await expect(page.getByText("Pastor James")).toBeVisible();
+  page.once("dialog", (dialog) => dialog.accept());
+  await page.getByRole("button", { name: "Turn off the link for Pastor James" }).click();
+  await expect(page.getByText("No longer working (1)")).toBeVisible({ timeout: 30_000 });
+
+  await visitor.goto(shareUrl);
+  await expect(
+    visitor.getByRole("heading", { name: "This link is not available" }),
+  ).toBeVisible();
+  const afterRevoke = await visitorContext.request.get(
+    `${baseURL}/api/share/${token}/file/${uploadId}`,
+  );
+  expect(afterRevoke.status()).toBe(404);
+  await visitorContext.close();
 
   // ── Delete the file from the full-size view ──
   await page.goto(`/services/${serviceId}/preacher`);

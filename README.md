@@ -31,6 +31,9 @@ coordinate in a Telegram group. That left the same problems each week:
   church's Google account.
 - **Gallery:** an album per service and category, full-size viewer, download, and
   search by category, service and date range.
+- **Share links:** a link for someone without an account (a pastor, a church
+  leader) to view and download one album, one category across every service,
+  one service, or the whole gallery. Links can expire and can be turned off.
 - **Assignments and handoffs:** who covers what, what is still missing, and what
   each receiving team is waiting for.
 - **Telegram bot:** announces new services, sends upload reminders, tells teams
@@ -61,6 +64,8 @@ want to understand why the code is the way it is.
 ```
 app/
   (app)/            Pages for signed-in people: home, services, gallery, handoffs, admin
+  s/                Public share-link pages, for people without an account
+  preview/          Design previews with sample data (local development only)
   api/              Upload, thumbnail, file, Google, Telegram and scheduled-job endpoints
   auth/, login/     Sign-in flow
 components/         UI building blocks, the uploader, the gallery

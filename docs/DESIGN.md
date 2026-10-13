@@ -159,7 +159,8 @@ Charts follow a few fixed rules so they read the same everywhere.
 no database. Screens: `dashboard`, `dashboard-empty`, `dashboard-member`,
 `dashboard-viewer`, `service`, `services`, `album`, `gallery`, `upload` (the
 upload sheet open), `categories`, `category-open`, `teams`, `people`,
-`schedule`, `login` and `login-error`. They exist only in local development
+`schedule`, `shares`, `share` (what a visitor sees on a share link),
+`share-unavailable`, `login` and `login-error`. They exist only in local development
 (`npm run dev`); on a deployed build they are a 404.
 
 ```bash

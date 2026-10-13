@@ -856,3 +856,83 @@ browser's own `<dialog>` element.
 **Why:** The native dialog gives focus trapping, closing with Escape, and a
 backdrop for free, and is accessible without a library. Every admin card uses
 the same component, so they all behave the same way.
+
+## Share links
+
+### A long random link is the permission
+
+**Choice:** A share link is `/s/<token>`, where the token is 32 random bytes.
+Whoever holds the link can see what it covers; nobody else can. Only admins
+can create, see or turn off links. A link can expire (7, 30 or 90 days, or
+never) and can be turned off at any time.
+
+**Why:** Church leaders want specific photos, especially baptisms, without
+being added to the media team's app. Giving them an account means invites,
+roles and a team for every pastor. A link is how people already share photo
+albums, and needs nothing from the recipient. The trade-off is that a link can
+be forwarded, which is why links expire, can be turned off, show how often
+they have been opened, and say on the page not to pass them on. For the other
+case you raised (one person wanting one picture), downloading it and sending
+it yourself is still the right tool, and needs no link at all.
+
+### What a link covers is fixed when it is made
+
+**Choice:** A link covers one of four things: one album (a category of one
+service), one category across every service, one whole service, or the whole
+gallery. It is created from the Share button on that thing, and the form spells
+out what will be visible before the link exists.
+
+**Why:** "All baptisms" should keep working as new baptisms are uploaded, so a
+link stores a scope, not a list of files. Making the link from the page it
+covers means there is no separate "choose what to share" step to get wrong.
+Wide links (a service, a category, everything) carry an extra warning that
+they include whatever is added later.
+
+### Visitors never touch the database; scope is enforced in one file
+
+**Choice:** A visitor has no account, so Row Level Security cannot decide what
+they see. The server reads on their behalf with the secret key, and
+`lib/share/server.ts` is the only place that does: `findActiveShare` decides
+whether a link works, and `findSharedUpload` decides whether one file is inside
+its scope. The image and file routes for share links go through both.
+
+**Why:** Everywhere else in the app the database enforces access. Here the
+server must, so the check is kept in one small, tested place where it is hard
+to forget. A wrong token, an expired link, and a file outside the link's scope
+all get the same plain "not found", which tells a guesser nothing about what
+exists. The end-to-end test opens a link in a signed-out browser and checks
+that the link works, that a made-up token does not, that the app's own routes
+still refuse the visitor, and that turning the link off stops it at once.
+
+### Links can be copied again later
+
+**Choice:** The token is stored as it is, so an admin can copy a link again
+from Admin, Shared links.
+
+**Why:** The one-time Telegram links store only a hash, because they are used
+within minutes. A share link lives for weeks and gets re-sent ("can you send me
+that link again?"). The table can only be read by admins, who can see
+everything the link shows anyway, so storing it gives nothing away to them.
+
+### Large videos use Google Drive's "anyone with the link"
+
+**Choice:** Photos (up to 50 MB) are streamed through the app. For a larger
+video, that one file is switched to "anyone with the link can view" in Google
+Drive and the visitor is sent there. Each time is recorded, and the file is
+made private again when the share link expires or is turned off (the scheduled
+job retries if Drive cannot be reached).
+
+**Why:** Streaming multi-gigabyte videos through Vercel would use up the free
+plan's data allowance. Signed-in team members get Drive access to their own
+Google account; a visitor has no account to give it to, so the file itself has
+to be opened up. It is done per file, only when someone asks for it, and
+undone afterwards, so nothing stays open longer than the link that needed it.
+
+### "Allow downloads" off means the originals are not served
+
+**Choice:** With downloads off, the page shows previews only. The file route
+refuses, and videos are not opened in Drive (which would let them be saved).
+
+**Why:** Hiding a button is not a control. The server refusing the request is.
+A preview can still be screenshotted, which the option's wording is honest
+about: it says they can look but not save the originals.
