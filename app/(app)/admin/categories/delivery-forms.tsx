@@ -8,7 +8,7 @@ import { EMPTY_FORM_STATE } from "@/lib/form-state";
 import { addCategoryTeam, updateCategoryTeam } from "./actions";
 
 const hoursInput =
-  "h-12 w-20 rounded-sm border border-border-strong bg-canvas px-3 text-body text-ink";
+  "h-12 w-20 rounded-md border border-hairline bg-surface-soft px-3 text-body text-ink transition-colors hover:border-muted focus:border-primary";
 
 /** One team that receives a category: change its deadline or remove it. */
 export function DeliveryRow({
