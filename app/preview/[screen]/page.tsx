@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { CategoriesView } from "@/components/admin/categories-view";
 import { PeopleView } from "@/components/admin/people-view";
 import { ScheduleView } from "@/components/admin/schedule-view";
+import { SharesView } from "@/components/admin/shares-view";
 import { TeamsView } from "@/components/admin/teams-view";
 import { LoginView } from "@/components/auth/login-view";
 import { DashboardView } from "@/components/dashboard/dashboard-view";
@@ -9,6 +10,7 @@ import { AlbumView } from "@/components/gallery/album-view";
 import { GalleryView } from "@/components/gallery/gallery-view";
 import { ServiceListView } from "@/components/services/service-list-view";
 import { ServiceView } from "@/components/services/service-view";
+import { ShareUnavailable, ShareView } from "@/components/share/share-view";
 import { AppShell } from "@/components/shell/app-shell";
 import {
   previewAlbum,
@@ -19,6 +21,8 @@ import {
   previewSchedule,
   previewService,
   previewServiceList,
+  previewShare,
+  previewShares,
   previewTeams,
   previewEmptyDashboard,
   previewUpload,
@@ -147,6 +151,16 @@ export default async function PreviewPage({
           <ScheduleView data={previewSchedule} />
         </AppShell>
       );
+    case "shares":
+      return (
+        <AppShell user={previewUser} upload={previewUpload} currentPath="/admin/shares">
+          <SharesView data={previewShares} />
+        </AppShell>
+      );
+    case "share":
+      return <ShareView data={previewShare} />;
+    case "share-unavailable":
+      return <ShareUnavailable />;
     default:
       notFound();
   }

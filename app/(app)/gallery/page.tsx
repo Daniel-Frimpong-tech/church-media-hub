@@ -59,6 +59,7 @@ export default async function GalleryPage({
         items,
         hasNextPage,
         canDelete: profile.role === "admin",
+        canShare: profile.role === "admin",
       }}
     />
   );

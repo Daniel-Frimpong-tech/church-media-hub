@@ -52,6 +52,7 @@ export default async function AlbumPage({
         items,
         canUpload: can(profile.role, "upload_media"),
         canDelete: profile.role === "admin",
+        canShare: profile.role === "admin",
       }}
     />
   );

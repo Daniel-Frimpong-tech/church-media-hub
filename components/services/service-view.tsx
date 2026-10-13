@@ -16,6 +16,7 @@ import { ActionButton } from "@/components/ui/action-button";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
+import { ShareButton } from "@/components/share/share-button";
 import { UploadButton } from "@/components/upload/upload-provider";
 import { cn } from "@/lib/cn";
 import type { HandoffStage } from "@/lib/domain/deadlines";
@@ -61,6 +62,13 @@ export function ServiceView({ data }: { data: ServiceData }) {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {data.canUpload ? <UploadButton serviceId={data.id} /> : null}
+            {data.isAdmin ? (
+              <ShareButton
+                serviceId={data.id}
+                covers={`Everything from ${data.name}, ${data.dateLine.split(" · ")[0]}`}
+                wide
+              />
+            ) : null}
             {data.canManage ? (
               <Link href={`/services/${data.id}/edit`} className={buttonClasses("secondary")}>
                 <Pencil aria-hidden size={16} />
