@@ -294,3 +294,24 @@ export async function moveToBin(accessToken: string, fileId: string): Promise<vo
     body: JSON.stringify({ trashed: true }),
   });
 }
+
+/**
+ * Makes one file viewable by anyone who has its Drive link, without it being
+ * findable by search. Returns the permission ID needed to undo it.
+ */
+export async function grantAnyoneWithLink(
+  accessToken: string,
+  fileId: string,
+): Promise<string> {
+  const response = await driveFetch(
+    accessToken,
+    `${filesUrl()}/${encodeURIComponent(fileId)}/permissions?fields=id`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "anyone", role: "reader", allowFileDiscovery: false }),
+    },
+  );
+  const { id } = (await response.json()) as { id: string };
+  return id;
+}

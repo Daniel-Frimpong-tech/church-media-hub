@@ -2,6 +2,7 @@ import "server-only";
 
 import { retryPendingRevocations } from "@/lib/google/grants";
 import { sendDueNotifications } from "@/lib/notifications/telegram";
+import { closePublicFiles } from "@/lib/share/drive";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { closeAbandonedUploads, removeExpiredLinkTokens } from "./cleanup";
 import { createRecurringServices, retryFailedFolders } from "./recurring";
@@ -61,6 +62,9 @@ export async function runScheduledJobs(now: Date = new Date()): Promise<JobResul
   });
   await step("remove Drive access", async () => {
     result.driveAccessRemoved = await retryPendingRevocations();
+    // Files opened to "anyone with the link" for share links that have since
+    // expired or been turned off.
+    result.driveAccessRemoved += await closePublicFiles();
   });
   await step("clean up", async () => {
     result.uploadsClosed = await closeAbandonedUploads(now);
