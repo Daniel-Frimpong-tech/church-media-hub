@@ -5,6 +5,7 @@ import { AppShell } from "@/components/shell/app-shell";
 import {
   previewDashboard,
   previewEmptyDashboard,
+  previewUpload,
   previewUser,
 } from "@/lib/preview/fixtures";
 
@@ -25,13 +26,13 @@ export default async function PreviewPage({
       return <LoginView errorKey="not_invited" />;
     case "dashboard":
       return (
-        <AppShell user={previewUser} currentPath="/dashboard">
+        <AppShell user={previewUser} upload={previewUpload} currentPath="/dashboard">
           <DashboardView data={previewDashboard} />
         </AppShell>
       );
     case "dashboard-empty":
       return (
-        <AppShell user={previewUser} currentPath="/dashboard">
+        <AppShell user={previewUser} upload={previewUpload} currentPath="/dashboard">
           <DashboardView data={previewEmptyDashboard} />
         </AppShell>
       );
@@ -39,10 +40,40 @@ export default async function PreviewPage({
       return (
         <AppShell
           user={{ ...previewUser, name: "Grace Mensah", role: "member" }}
+          upload={previewUpload}
           currentPath="/dashboard"
         >
           <DashboardView
             data={{ ...previewDashboard, firstName: "Grace", role: "member", canManage: false }}
+          />
+        </AppShell>
+      );
+    case "upload":
+      return (
+        <AppShell
+          user={previewUser}
+          upload={{ ...previewUpload, initiallyOpen: true }}
+          currentPath="/dashboard"
+        >
+          <DashboardView data={previewDashboard} />
+        </AppShell>
+      );
+    case "dashboard-viewer":
+      return (
+        <AppShell
+          user={{ ...previewUser, name: "Tola Adeyemi", role: "viewer" }}
+          upload={null}
+          currentPath="/dashboard"
+        >
+          <DashboardView
+            data={{
+              ...previewDashboard,
+              firstName: "Tola",
+              role: "viewer",
+              canManage: false,
+              canUpload: false,
+              myTasks: [],
+            }}
           />
         </AppShell>
       );

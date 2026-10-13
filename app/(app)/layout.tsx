@@ -1,5 +1,6 @@
 import { AppShell } from "@/components/shell/app-shell";
 import { requireProfile } from "@/lib/auth";
+import { loadUploadTargets } from "@/lib/upload-targets";
 
 export default async function AppLayout({ children }: LayoutProps<"/">) {
   const profile = await requireProfile();
@@ -7,6 +8,7 @@ export default async function AppLayout({ children }: LayoutProps<"/">) {
   return (
     <AppShell
       user={{ name: profile.full_name, email: profile.email, role: profile.role }}
+      upload={await loadUploadTargets(profile)}
     >
       {children}
     </AppShell>

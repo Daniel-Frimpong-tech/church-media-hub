@@ -8,7 +8,6 @@ import {
   Play,
   TrendingDown,
   TrendingUp,
-  UploadCloud,
 } from "lucide-react";
 import Link from "next/link";
 import { setTaskDone } from "@/app/(app)/services/actions";
@@ -21,6 +20,7 @@ import { Avatar, AvatarStack } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { buttonClasses } from "@/components/ui/button";
 import { ProgressRing } from "@/components/ui/progress-ring";
+import { UploadButton } from "@/components/upload/upload-provider";
 import { cn } from "@/lib/cn";
 import { compareToPrevious } from "@/lib/domain/analytics";
 import { formatBytes } from "@/lib/domain/uploads";
@@ -289,15 +289,7 @@ function FocusCard({
           </div>
 
           <div className="flex flex-wrap gap-2">
-            {canUpload ? (
-              <Link
-                href={`/services/${focus.id}#upload`}
-                className={buttonClasses("primary")}
-              >
-                <UploadCloud aria-hidden size={18} />
-                Upload
-              </Link>
-            ) : null}
+            {canUpload ? <UploadButton serviceId={focus.id} /> : null}
             <Link
               href={`/services/${focus.id}`}
               className={buttonClasses("secondary")}
@@ -407,14 +399,12 @@ function MyTasks({ data }: { data: DashboardData }) {
               )}
             </div>
             <div className="flex items-center gap-2">
-              <Link
-                href={`/services/${task.serviceId}#upload`}
-                className={buttonClasses("ghost", "sm")}
-                aria-label={`Upload ${task.categoryName} for ${task.serviceName}`}
-              >
-                <UploadCloud aria-hidden size={16} />
-                Upload
-              </Link>
+              <UploadButton
+                serviceId={task.serviceId}
+                categoryId={task.categoryId}
+                variant="ghost"
+                size="sm"
+              />
               <ActionButton
                 action={setTaskDone}
                 fields={{

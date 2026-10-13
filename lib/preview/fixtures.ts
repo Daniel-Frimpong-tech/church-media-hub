@@ -1,5 +1,5 @@
 import type { DashboardData } from "@/components/dashboard/types";
-import type { ShellUser } from "@/components/shell/app-shell";
+import type { ShellUpload, ShellUser } from "@/components/shell/app-shell";
 import type { HandoffRow } from "@/lib/handoffs";
 
 /**
@@ -168,4 +168,20 @@ export const previewEmptyDashboard: DashboardData = {
   recentUploads: [],
   upcoming: [],
   analytics: null,
+};
+
+const CATEGORIES = [
+  { id: "c1", name: "Baptism" },
+  { id: "c2", name: "Preacher" },
+  { id: "c3", name: "Fellowship" },
+  { id: "c4", name: "Videos" },
+];
+
+export const previewUpload: ShellUpload = {
+  defaultServiceId: "s1",
+  services: [
+    { id: "s1", name: "Sunday Service", dateLine: "Sun, Oct 12", relative: "3 days ago", categories: CATEGORIES },
+    { id: "s2", name: "Midweek Prayer", dateLine: "Wed, Oct 15", relative: "Today", categories: CATEGORIES },
+    { id: "s3", name: "Sunday Service", dateLine: "Sun, Oct 19", relative: "In 4 days", categories: CATEGORIES },
+  ],
 };
