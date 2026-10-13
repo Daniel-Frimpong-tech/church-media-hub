@@ -5,6 +5,7 @@ import {
   Check,
   CheckCircle2,
   ImagePlus,
+  Plus,
   RotateCcw,
   UploadCloud,
   X,
@@ -29,6 +30,7 @@ import { Button, buttonClasses } from "@/components/ui/button";
 import { ProgressRing } from "@/components/ui/progress-ring";
 import { cn } from "@/lib/cn";
 import { formatBytes } from "@/lib/domain/uploads";
+import { fetchUploadService } from "@/app/(app)/upload-actions";
 import { UploadQueue, type UploadItem } from "@/lib/uploads/queue";
 
 /** A service someone can upload to right now, with its categories. */
@@ -83,17 +85,57 @@ export function UploadProvider({
   const [isOpen, setIsOpen] = useState(initiallyOpen);
   const [serviceId, setServiceId] = useState(defaultServiceId ?? services[0]?.id ?? "");
   const [categoryId, setCategoryId] = useState("");
+  // Services opened from their own page that are not in the usual short list.
+  const [extraServices, setExtraServices] = useState<UploadService[]>([]);
+  const [lookup, setLookup] = useState<"idle" | "loading" | "unavailable">("idle");
 
-  const service = services.find((entry) => entry.id === serviceId) ?? services[0];
+  const allServices = useMemo(
+    () => [
+      ...extraServices.filter((extra) => !services.some((known) => known.id === extra.id)),
+      ...services,
+    ],
+    [extraServices, services],
+  );
+  const service = allServices.find((entry) => entry.id === serviceId) ?? allServices[0];
   // Fall back to the service's first category if the chosen one is not in it.
   const category =
     service?.categories.find((entry) => entry.id === categoryId) ??
     service?.categories[0];
 
+  const knownIds = useRef(new Set<string>());
+  useEffect(() => {
+    knownIds.current = new Set(allServices.map((entry) => entry.id));
+  }, [allServices]);
+
   const open = useCallback((preselect?: Preselect) => {
-    if (preselect?.serviceId) setServiceId(preselect.serviceId);
-    if (preselect?.categoryId) setCategoryId(preselect.categoryId);
     setIsOpen(true);
+    setLookup("idle");
+    if (preselect?.categoryId) setCategoryId(preselect.categoryId);
+
+    const wanted = preselect?.serviceId;
+    if (!wanted) return;
+    if (knownIds.current.has(wanted)) {
+      setServiceId(wanted);
+      return;
+    }
+    // Asked for a service the sheet does not know about. Fetch it instead of
+    // quietly falling back to another one, which would send files to the
+    // wrong service.
+    setLookup("loading");
+    void fetchUploadService(wanted)
+      .then((found) => {
+        if (!found) {
+          setLookup("unavailable");
+          return;
+        }
+        setExtraServices((previous) => [
+          found,
+          ...previous.filter((entry) => entry.id !== found.id),
+        ]);
+        setServiceId(found.id);
+        setLookup("idle");
+      })
+      .catch(() => setLookup("unavailable"));
   }, []);
   const value = useMemo(() => ({ open }), [open]);
 
@@ -132,8 +174,9 @@ export function UploadProvider({
       {children}
       {isOpen ? (
         <UploadSheet
-          services={services}
-          service={service}
+          services={allServices}
+          lookup={lookup}
+          service={lookup === "idle" ? service : undefined}
           category={category}
           onServiceChange={setServiceId}
           onCategoryChange={setCategoryId}
@@ -153,6 +196,7 @@ export function UploadProvider({
 
 function UploadSheet({
   services,
+  lookup,
   service,
   category,
   onServiceChange,
@@ -165,6 +209,7 @@ function UploadSheet({
   onClose,
 }: {
   services: UploadService[];
+  lookup: "idle" | "loading" | "unavailable";
   service: UploadService | undefined;
   category: { id: string; name: string } | undefined;
   onServiceChange: (id: string) => void;
@@ -220,11 +265,16 @@ function UploadSheet({
         </div>
 
         <div className="flex flex-col gap-5 overflow-y-auto p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
-          {!service ? (
+          {lookup === "loading" ? (
+            <p role="status" className="rounded-lg bg-surface-soft p-4 text-body-sm text-muted">
+              Opening that service…
+            </p>
+          ) : !service ? (
             <div className="flex flex-col items-start gap-3 rounded-lg bg-surface-soft p-4">
               <p className="text-body-sm text-ink-soft">
-                There is no service ready for uploads. A service needs its
-                Google Drive folders before files can go in.
+                {lookup === "unavailable"
+                  ? "That service cannot take uploads yet. It needs its Google Drive folders first: an admin can create them on the service page."
+                  : "There is no service ready for uploads. A service needs its Google Drive folders before files can go in."}
               </p>
               {canCreateService ? (
                 <Link
@@ -501,6 +551,7 @@ export function UploadButton({
   label = "Upload",
   variant = "primary",
   size = "md",
+  iconOnly = false,
   className,
 }: {
   serviceId?: string;
@@ -508,10 +559,30 @@ export function UploadButton({
   label?: string;
   variant?: "primary" | "secondary" | "ghost";
   size?: "md" | "sm";
+  /** A round "+" button; the label is still read out by screen readers. */
+  iconOnly?: boolean;
   className?: string;
 }) {
   const upload = useUpload();
   if (!upload) return null;
+
+  if (iconOnly) {
+    return (
+      <button
+        type="button"
+        aria-label={label}
+        title={label}
+        onClick={() => upload.open({ serviceId, categoryId })}
+        className={cn(
+          "flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border-strong text-ink transition-[background-color,border-color,transform] hover:border-primary hover:bg-primary hover:text-on-primary active:scale-95",
+          className,
+        )}
+      >
+        <Plus aria-hidden size={18} strokeWidth={2.5} />
+      </button>
+    );
+  }
+
   return (
     <Button
       variant={variant}

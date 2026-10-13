@@ -50,8 +50,9 @@ export async function createService(
   // Tell the team group, after the response so Telegram never slows this down.
   if (folders.ok) after(() => announceServiceCreated(service.id));
 
-  revalidatePath("/services");
-  revalidatePath("/dashboard");
+  // Everything, including the shell: the new service belongs in the upload
+  // sheet's list straight away.
+  revalidatePath("/", "layout");
   redirect(`/services/${service.id}`);
 }
 

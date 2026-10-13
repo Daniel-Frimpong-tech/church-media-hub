@@ -212,9 +212,8 @@ function AlbumCard({
           <UploadButton
             serviceId={serviceId}
             categoryId={album.categoryId}
-            label="Add"
-            variant="secondary"
-            size="sm"
+            label={`Add to ${album.name}`}
+            iconOnly
           />
         ) : null}
       </div>

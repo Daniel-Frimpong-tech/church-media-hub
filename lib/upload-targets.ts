@@ -85,3 +85,34 @@ export async function loadUploadTargets(profile: Profile): Promise<UploadTargets
     defaultServiceId: focus?.id ?? null,
   };
 }
+
+/**
+ * One service as an upload target, or null if the person cannot upload to it
+ * (no permission, no such service, or no Drive folders yet).
+ */
+export async function loadUploadService(
+  profile: Profile,
+  serviceId: string,
+): Promise<UploadService | null> {
+  if (!can(profile.role, "upload_media")) return null;
+
+  const supabase = await createClient();
+  const [service, folders, categories] = await Promise.all([
+    supabase.from("services").select("id, name, starts_at").eq("id", serviceId).maybeSingle(),
+    supabase.from("service_folders").select("category_id").eq("service_id", serviceId),
+    supabase.from("categories").select("id, name").eq("is_active", true).order("sort_order"),
+  ]);
+  if (!service.data) return null;
+
+  const withFolder = new Set((folders.data ?? []).map((row) => row.category_id));
+  const available = (categories.data ?? []).filter((category) => withFolder.has(category.id));
+  if (available.length === 0) return null;
+
+  return {
+    id: service.data.id,
+    name: service.data.name,
+    dateLine: formatChurchDate(service.data.starts_at).replace(/, \d{4}$/, ""),
+    relative: relativeDay(service.data.starts_at, currentTime()),
+    categories: available,
+  };
+}

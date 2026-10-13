@@ -70,6 +70,10 @@ export type ServiceSummary = {
   dateLine: string;
   relative: string;
   cover: string | null;
+  /** Shown as the cover when there is no photo yet: "19", "OCT", "SUN". */
+  day: string;
+  month: string;
+  weekday: string;
   fileCount: number;
   assigned: string[];
   missing: number;

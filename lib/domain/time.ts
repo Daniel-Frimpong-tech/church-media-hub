@@ -173,3 +173,23 @@ export function formatChurchLongDate(instant: Date | string): string {
     day: "numeric",
   }).format(new Date(instant));
 }
+
+/** The pieces of a date for a calendar-style tile: "19", "OCT", "SUN". */
+export function churchDateParts(instant: Date | string): {
+  day: string;
+  month: string;
+  weekday: string;
+} {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: CHURCH_TIME_ZONE,
+    day: "numeric",
+    month: "short",
+    weekday: "short",
+  }).formatToParts(new Date(instant));
+  const get = (type: string) => parts.find((part) => part.type === type)?.value ?? "";
+  return {
+    day: get("day"),
+    month: get("month").toUpperCase(),
+    weekday: get("weekday").toUpperCase(),
+  };
+}

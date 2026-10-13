@@ -6,6 +6,7 @@ import { relativeDay } from "@/lib/domain/analytics";
 import { outstandingTasks } from "@/lib/domain/assignments";
 import { can } from "@/lib/domain/permissions";
 import {
+  churchDateParts,
   currentTime,
   formatChurchDate,
   formatChurchTime,
@@ -268,6 +269,7 @@ export async function loadServiceList(): Promise<{
     dateLine: dateLine(service.starts_at),
     relative: relativeDay(service.starts_at, now),
     cover: cover.get(service.id) ?? null,
+    ...churchDateParts(service.starts_at),
     fileCount: fileCount.get(service.id) ?? 0,
     assigned: assigned.get(service.id) ?? [],
     missing: missing.get(service.id) ?? 0,

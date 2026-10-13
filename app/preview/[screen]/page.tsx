@@ -1,9 +1,17 @@
 import { notFound } from "next/navigation";
 import { LoginView } from "@/components/auth/login-view";
 import { DashboardView } from "@/components/dashboard/dashboard-view";
+import { AlbumView } from "@/components/gallery/album-view";
+import { GalleryView } from "@/components/gallery/gallery-view";
+import { ServiceListView } from "@/components/services/service-list-view";
+import { ServiceView } from "@/components/services/service-view";
 import { AppShell } from "@/components/shell/app-shell";
 import {
+  previewAlbum,
   previewDashboard,
+  previewGallery,
+  previewService,
+  previewServiceList,
   previewEmptyDashboard,
   previewUpload,
   previewUser,
@@ -75,6 +83,30 @@ export default async function PreviewPage({
               myTasks: [],
             }}
           />
+        </AppShell>
+      );
+    case "service":
+      return (
+        <AppShell user={previewUser} upload={previewUpload} currentPath="/services">
+          <ServiceView data={previewService} />
+        </AppShell>
+      );
+    case "services":
+      return (
+        <AppShell user={previewUser} upload={previewUpload} currentPath="/services">
+          <ServiceListView {...previewServiceList} canManage />
+        </AppShell>
+      );
+    case "album":
+      return (
+        <AppShell user={previewUser} upload={previewUpload} currentPath="/services">
+          <AlbumView data={previewAlbum} />
+        </AppShell>
+      );
+    case "gallery":
+      return (
+        <AppShell user={previewUser} upload={previewUpload} currentPath="/gallery">
+          <GalleryView data={previewGallery} />
         </AppShell>
       );
     default:

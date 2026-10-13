@@ -1,4 +1,4 @@
-import { CalendarPlus, ImageOff } from "lucide-react";
+import { CalendarPlus } from "lucide-react";
 import Link from "next/link";
 import { AvatarStack } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -68,9 +68,13 @@ function ServiceGrid({ services }: { services: ServiceSummary[] }) {
                   className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                 />
               ) : (
-                <span className="flex h-full flex-col items-center justify-center gap-1 text-muted-soft">
-                  <ImageOff aria-hidden size={22} />
-                  <span className="text-caption">No photos yet</span>
+                // No photo yet: the date stands in as the cover.
+                <span className="flex h-full flex-col items-center justify-center bg-[radial-gradient(120%_120%_at_0%_0%,rgb(157_140_255/0.28),transparent_60%)]">
+                  <span className="text-label text-primary uppercase">{service.weekday}</span>
+                  <span className="text-[3.5rem] leading-none font-extrabold text-ink">
+                    {service.day}
+                  </span>
+                  <span className="text-label text-muted uppercase">{service.month}</span>
                 </span>
               )}
               <span className="absolute top-2 left-2">
