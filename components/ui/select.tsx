@@ -24,7 +24,7 @@ export function Select({
       <label
         htmlFor={selectId}
         className={cn(
-          "text-body-sm font-medium text-ink",
+          "text-body-sm font-bold text-ink",
           hideLabel && "sr-only",
         )}
       >
@@ -33,7 +33,7 @@ export function Select({
       <select
         id={selectId}
         className={cn(
-          "h-12 rounded-sm border border-border-strong bg-canvas px-3 text-body text-ink disabled:bg-surface-soft disabled:text-muted-soft",
+          "h-12 rounded-md border border-hairline bg-surface-soft px-3 text-body text-ink transition-colors hover:border-muted focus:border-primary disabled:text-muted-soft",
           className,
         )}
         {...props}

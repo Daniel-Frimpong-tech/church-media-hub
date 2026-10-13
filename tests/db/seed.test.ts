@@ -129,3 +129,49 @@ describe("seed data", () => {
     expect(all).toHaveLength(3);
   });
 });
+
+describe("upload analytics", () => {
+  it("counts files, storage, categories and contributors for an admin", async () => {
+    const [{ stats }] = await db.as<{ stats: Record<string, unknown> }>(
+      "20000000-0000-4000-8000-000000000001",
+      "select public.upload_analytics(now() - interval '60 days') as stats",
+    );
+    expect(stats.total_files).toBe(6);
+    expect(stats.total_bytes).toBe(
+      6291456 + 5872025 + 6710886 + 7025459 + 6501171 + 1932735283,
+    );
+    expect(stats.photos).toBe(5);
+    expect(stats.videos).toBe(1);
+    expect(stats.by_category).toEqual([
+      { name: "Preacher", files: 3 },
+      { name: "Baptism", files: 2 },
+      { name: "Videos", files: 1 },
+    ]);
+    expect(stats.by_person).toEqual([
+      { name: "Grace Mensah", files: 5 },
+      { name: "Sam Boateng", files: 1 },
+    ]);
+    const weekly = stats.weekly as { week: string; files: number }[];
+    expect(weekly.reduce((sum, week) => sum + week.files, 0)).toBe(6);
+    // Every week key is a Sunday.
+    for (const { week } of weekly) {
+      expect(new Date(`${week}T12:00:00Z`).getUTCDay()).toBe(0);
+    }
+  });
+
+  it("only counts what a viewer is allowed to see", async () => {
+    const [{ stats }] = await db.as<{ stats: Record<string, unknown> }>(
+      TOLA,
+      "select public.upload_analytics(now() - interval '60 days') as stats",
+    );
+    // The thumbnail team receives Preacher only.
+    expect(stats.total_files).toBe(3);
+    expect(stats.by_category).toEqual([{ name: "Preacher", files: 3 }]);
+  });
+
+  it("cannot be called signed out", async () => {
+    await expect(
+      db.asAnon("select public.upload_analytics(now() - interval '60 days')"),
+    ).rejects.toThrow(/permission denied/);
+  });
+});

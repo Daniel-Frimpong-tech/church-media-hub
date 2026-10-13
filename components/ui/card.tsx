@@ -1,12 +1,12 @@
 import type { HTMLAttributes } from "react";
 import { cn } from "@/lib/cn";
 
-/** Flat, hairline-bordered surface. Depth comes from photos, not shadows. */
+/** A surface one step lighter than the page. No border: depth is the step. */
 export function Card({ className, ...props }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cn(
-        "rounded-md border border-hairline bg-canvas p-4 tablet:p-6",
+        "rounded-lg bg-surface p-4 tablet:p-6",
         className,
       )}
       {...props}

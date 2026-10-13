@@ -411,6 +411,10 @@ export type Database = {
         Args: { p_assignment_id: string; p_category_id: string; p_done: boolean };
         Returns: undefined;
       };
+      upload_analytics: {
+        Args: { p_since: string };
+        Returns: Json;
+      };
       set_handoff_received: {
         Args: { p_handoff_id: string; p_received: boolean };
         Returns: undefined;

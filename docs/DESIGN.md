@@ -1,110 +1,155 @@
 # Design system
 
-The look of RCW Media is adapted from the **Airbnb** entry in
-[awesome-design-md](https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/airbnb).
-That system is photo-led: a white canvas, quiet type and one accent colour, so the
-pictures carry the visual weight. That suits an app whose main job is showing
-albums on a phone.
+The look of RCW Media is adapted from the **Spotify** entry in
+[awesome-design-md](https://github.com/VoltAgent/awesome-design-md/tree/main/design-md/spotify):
+a dark, immersive interface where every surface is a shade of charcoal, so the
+content supplies the colour. For Spotify the content is album art. For us it is
+the church's photos.
 
 We borrow the structure, not the brand. Two things are deliberately different:
 
-- **Font:** Geist (free, already in the project) instead of Airbnb's licensed Cereal.
-- **Accent:** our own indigo instead of Airbnb's red, so the app does not read as theirs.
+- **Font:** Figtree (free, geometric) instead of Spotify's proprietary typeface.
+- **Accent:** our own violet instead of Spotify green, so the app does not read as theirs.
+
+(The first version of the app used a light design adapted from Airbnb's system.
+It was replaced because it came out text-heavy and plain. See DECISIONS.md.)
 
 The tokens live in [`app/globals.css`](../app/globals.css) inside `@theme`, which
-turns each one into a Tailwind utility. Build screens from these utilities and the
-components in `components/ui`. Do not use raw hex values or Tailwind's default
+turns each one into a Tailwind utility. Build screens from these utilities and
+the components in `components/`. Do not use raw hex values or Tailwind's default
 colour palette (`zinc-500`, `blue-600` and so on).
 
 ## Principles
 
-1. **Photos first.** Chrome stays white and grey. Thumbnails are the colour on the page.
-2. **One accent, used sparingly.** One or two indigo moments per screen: the main action and the active state.
-3. **Soft shapes.** Every interactive element is rounded. No square corners.
-4. **Flat by default.** Hairline borders separate things. There is exactly one shadow, for things that float.
-5. **Phone first.** Design at 375px wide, then add columns. Anything tappable is at least 48px tall.
+1. **Photos are the colour.** Chrome is charcoal and white. Wherever a screen can
+   show real photos (a service's cover, recent uploads), it does.
+2. **One accent.** Violet marks the main action on a screen, the active
+   navigation item, and data in charts. Nothing else is violet.
+3. **Fewest taps.** The thing someone most likely came to do is on the first
+   screen, as a button, not behind a card that leads to another page.
+4. **Alive, not busy.** Things rise in when a page opens, numbers count up,
+   buttons press in, cards respond to hover. All of it stops for people who ask
+   their device for reduced motion.
+5. **Phone first.** Design at 375px wide, then add columns. Anything tappable is
+   at least 44px tall, and primary actions 48px.
 
 ## Colour
 
+### Surfaces
+
+Depth comes from stepping up this ladder, not from borders or shadows.
+
 | Utility | Value | Use |
 |---|---|---|
-| `primary` | `#4338ca` | Main action per screen, active tab, links |
-| `primary-active` | `#3730a3` | Pressed state |
-| `primary-soft` | `#eef0ff` | Accent badge and selected-row background |
-| `primary-disabled` | `#c7cbf5` | Disabled primary button |
-| `ink` | `#222222` | Headings and primary text |
-| `ink-soft` | `#3f3f3f` | Body paragraphs |
-| `muted` | `#6a6a6a` | Secondary text, metadata |
-| `muted-soft` | `#929292` | Placeholders, disabled text |
-| `canvas` | `#ffffff` | Page and card background |
-| `surface-soft` | `#f7f7f7` | Subtle bands, photo placeholders |
-| `surface-strong` | `#f2f2f2` | Pressed states, neutral badge |
-| `hairline` | `#dddddd` | Card borders and dividers |
-| `hairline-soft` | `#ebebeb` | Dividers inside a card |
-| `border-strong` | `#c1c1c1` | Input borders |
+| `canvas` | `#101012` | The page, the sidebar |
+| `surface` | `#18181b` | Cards and panels |
+| `surface-soft` | `#1f1f23` | Rows inside a card, inputs, card hover |
+| `surface-strong` | `#2a2a30` | Active nav item, neutral badges, chart tracks |
+| `surface-hover` | `#32323a` | Hover on the step above |
 
-### Status colours
+### Text and lines
 
-Airbnb's system has no status colours, so these are ours. Each has a text colour
-and a soft background, and status is never shown by colour alone: always pair it
-with a word.
+| Utility | Value | Use |
+|---|---|---|
+| `ink` | `#ffffff` | Headings, primary text |
+| `ink-soft` | `#d4d4d8` | Body paragraphs |
+| `muted` | `#a1a1aa` | Secondary text, metadata |
+| `muted-soft` | `#71717a` | Placeholders, axis labels, inactive tabs |
+| `hairline` | `#2e2e35` | Dividers, chart gridlines, input borders |
+| `hairline-soft` | `#232328` | The faintest dividers |
+| `border-strong` | `#52525b` | Outlined buttons |
+
+### Accent
+
+| Utility | Value | Use |
+|---|---|---|
+| `primary` | `#9d8cff` | Main action, active nav icon, chart marks |
+| `primary-active` | `#b3a6ff` | Hover and pressed |
+| `primary-soft` | 16% violet | Accent badges, soft washes |
+| `on-primary` | `#14121f` | Text on a violet button (dark, for contrast) |
+
+### Status
+
+Status is never shown by colour alone: always pair it with a word or icon.
 
 | Meaning | Text | Background | Used for |
 |---|---|---|---|
-| Good | `success` `#1a7f4b` | `success-soft` | Delivered, uploaded, connected |
-| Waiting | `warning` `#8a5300` | `warning-soft` | Pending, due soon |
-| Problem | `danger` `#c13515` | `danger-soft` | Late, failed upload, expired Google connection |
+| Good | `success` `#4ade80` | `success-soft` | Delivered, uploaded, connected |
+| Waiting | `warning` `#fbbf24` | `warning-soft` | Pending, due soon, still to upload |
+| Problem | `danger` `#fb7185` | `danger-soft` | Late, failed upload, expired connection |
 
 ## Type
 
-Geist at modest weights. Each size utility sets its own line height and weight.
+Figtree. Bold or regular, little in between: hierarchy comes from weight.
 
 | Utility | Size / weight | Use |
 |---|---|---|
-| `text-display` | 28px / 700 | Page title, one per screen |
-| `text-title-lg` | 22px / 600 | Section heading |
-| `text-title` | 16px / 600 | Card title, list row title |
-| `text-body` | 16px / 400 | Paragraphs, inputs, buttons |
-| `text-body-sm` | 14px / 400 | Metadata, helper text |
-| `text-caption` | 13px / 400 | Timestamps, photo counts |
-| `text-badge` | 11px / 600 | Badges only |
+| `text-hero` | 40px / 800 | The home greeting, the sign-in headline |
+| `text-display` | 30px / 800 | Page titles, big numbers in stat tiles |
+| `text-title-lg` | 22px / 700 | Section headings |
+| `text-title` | 16px / 700 | Card titles |
+| `text-body` | 16px / 400 | Paragraphs, inputs |
+| `text-body-sm` | 14px / 400 | Most interface text, buttons (bold) |
+| `text-caption` | 13px / 400 | Metadata, footnotes |
+| `text-label` | 11px / 700, uppercase, wide | Small section labels ("ADMIN", "UP NEXT") |
+| `text-badge` | 11px / 700 | Badges |
 
-## Shape, spacing and depth
+## Shape, depth and motion
 
-- **Radius:** `rounded-sm` 8px (buttons, inputs), `rounded-md` 14px (cards, photos),
-  `rounded-lg` 20px (sheets), `rounded-xl` 32px (large panels), `rounded-full` (badges, filter pills, icon buttons).
-- **Spacing:** Tailwind's 4px scale. Use 16px gutters between cards and photos,
-  24px inside cards, 64px between major page sections.
-- **Shadow:** `shadow-float` is the only shadow. Use it for menus, bottom sheets and
-  the sticky upload bar. Cards and photos are flat.
-- **Scrim:** `bg-scrim/50` behind dialogs and the full-size photo viewer.
+- **Pills for anything you press** (`rounded-full`): buttons, badges, filter chips.
+- **Soft corners for anything you read:** `rounded-md` 10px (rows, inputs, photos),
+  `rounded-lg` 16px (cards), `rounded-xl` 24px (the hero card, sheets).
+- **Shadows only for things that float** over content: `shadow-float` for sheets
+  and menus, `shadow-card` for lifted imagery.
+- **Motion utilities:** `animate-rise` (enter from below), `animate-grow-x` /
+  `animate-grow-y` (bars and columns), and the `stagger` class on a container to
+  bring its children in one after another.
 
 ## Layout
 
-| Breakpoint | Width | Photo grid | Navigation |
+| Breakpoint | Width | Navigation | Columns |
 |---|---|---|---|
-| default | under 744px | 2 or 3 columns | Bottom tab bar |
-| `tablet:` | 744px and up | 4 columns | Top bar |
-| `desktop:` | 1128px and up | 6 columns | Top bar |
+| default | under 744px | Top bar and bottom tab bar | 1 (2 for stat tiles) |
+| `tablet:` | 744px and up | Same | 2 |
+| `desktop:` | 1100px and up | Sidebar | 3 or 4 |
 
-Content is capped at 1280px wide. Grids only change their column count between
-breakpoints; rows never reflow. On phones the main action for a screen (for
-example "Upload") sits in a sticky bar at the bottom, the way Airbnb's "Reserve"
-button does.
+Content is capped at 1200px. On desktop every section, including each admin
+page, is one click away in the sidebar. On phones the four main sections are in
+the tab bar and the rest are in the "More" sheet.
 
 ## Components
 
-In `components/ui`:
+- **`components/ui`**: `Button` (primary, secondary, ghost, danger; pill shaped),
+  `Badge`, `Card`, `Input`, `Select`, `Avatar` and `AvatarStack` (initials on a
+  tint that is always the same for a person), `ProgressRing`, `ActionButton`.
+- **`components/shell`**: `AppShell`, the frame around every signed-in page.
+- **`components/charts`**: `ColumnChart`, `BarList`, `CountUp`.
 
-- **`Button`**: `primary` (one per screen), `secondary` (outlined), `ghost` (text only),
-  `danger` (destructive, outlined). Size `md` is 48px tall for phones; `sm` is for dense desktop rows.
-- **`Badge`**: pill label in `neutral`, `accent`, `success`, `warning` or `danger`.
-- **`Card`**: flat white surface with a hairline border.
-- **`Input`**: 56px tall, label above, error text below in `danger`.
+## Charts
 
-Planned as later phases need them: photo tile and album grid, full-size viewer,
-filter pills, upload queue row with progress, bottom tab bar, empty and error states.
+Charts follow a few fixed rules so they read the same everywhere.
 
-## Not in v1
+- **One hue for "how many".** Columns and bars are violet; the current period is
+  full strength and earlier ones are dimmer. Colour is not used to tell
+  categories apart, because a label does that better.
+- **Thin marks.** Columns are at most 24px wide, rounded at the top and square on
+  the baseline. Bars are thin lines on a darker track.
+- **Numbers are written out.** Every bar has its value beside it. The column
+  chart shows a value on hover, focus or tap, and has the same data as a table
+  for screen readers.
+- **Text is never the data colour.** Labels and values use the text tokens.
+- **Status colours mean status.** Green, amber and red appear only where the
+  thing shown is good, waiting or a problem, such as the on-time meter.
 
-- **Dark mode.** The source system is light only, and photos are judged best on white. Tokens are named by role so a dark set can be added later without touching components.
+## Previewing screens
+
+`/preview/dashboard`, `/preview/dashboard-empty`, `/preview/dashboard-member`,
+`/preview/login` and `/preview/login-error` render the real screens with sample
+data, with no sign-in and no database. They exist only in local development
+(`npm run dev`); on a deployed build they are a 404.
+
+```bash
+node tests/tools/screenshot.mjs http://localhost:3000 ./shots dashboard login
+```
+
+takes phone and desktop screenshots of them.

@@ -1,0 +1,52 @@
+import { notFound } from "next/navigation";
+import { LoginView } from "@/components/auth/login-view";
+import { DashboardView } from "@/components/dashboard/dashboard-view";
+import { AppShell } from "@/components/shell/app-shell";
+import {
+  previewDashboard,
+  previewEmptyDashboard,
+  previewUser,
+} from "@/lib/preview/fixtures";
+
+/**
+ * Design previews: the real screens with sample data, no sign-in and no
+ * database. Local development only; on any deployed build this is a 404.
+ */
+export default async function PreviewPage({
+  params,
+}: PageProps<"/preview/[screen]">) {
+  if (process.env.NODE_ENV === "production") notFound();
+  const { screen } = await params;
+
+  switch (screen) {
+    case "login":
+      return <LoginView />;
+    case "login-error":
+      return <LoginView errorKey="not_invited" />;
+    case "dashboard":
+      return (
+        <AppShell user={previewUser} currentPath="/dashboard">
+          <DashboardView data={previewDashboard} />
+        </AppShell>
+      );
+    case "dashboard-empty":
+      return (
+        <AppShell user={previewUser} currentPath="/dashboard">
+          <DashboardView data={previewEmptyDashboard} />
+        </AppShell>
+      );
+    case "dashboard-member":
+      return (
+        <AppShell
+          user={{ ...previewUser, name: "Grace Mensah", role: "member" }}
+          currentPath="/dashboard"
+        >
+          <DashboardView
+            data={{ ...previewDashboard, firstName: "Grace", role: "member", canManage: false }}
+          />
+        </AppShell>
+      );
+    default:
+      notFound();
+  }
+}

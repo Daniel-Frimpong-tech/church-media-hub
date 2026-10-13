@@ -5,23 +5,23 @@ type Variant = "primary" | "secondary" | "ghost" | "danger";
 type Size = "md" | "sm";
 
 const base =
-  "inline-flex items-center justify-center gap-2 rounded-sm font-medium transition-colors disabled:cursor-not-allowed";
+  "inline-flex items-center justify-center gap-2 rounded-full font-bold transition-[background-color,transform,border-color,color] duration-150 active:scale-[0.97] disabled:cursor-not-allowed disabled:active:scale-100";
 
 const variants: Record<Variant, string> = {
   primary:
-    "bg-primary text-on-primary active:bg-primary-active disabled:bg-primary-disabled",
+    "bg-primary text-on-primary hover:bg-primary-active disabled:bg-primary-disabled disabled:text-muted",
   secondary:
-    "border border-ink bg-canvas text-ink active:bg-surface-strong disabled:border-hairline disabled:text-muted-soft",
+    "border border-border-strong bg-transparent text-ink hover:border-ink hover:bg-surface-strong disabled:border-hairline disabled:text-muted-soft",
   ghost:
-    "text-ink underline-offset-4 active:bg-surface-strong disabled:text-muted-soft",
+    "text-ink-soft hover:bg-surface-strong hover:text-ink disabled:text-muted-soft",
   danger:
-    "border border-danger bg-canvas text-danger active:bg-danger-soft disabled:border-hairline disabled:text-muted-soft",
+    "border border-danger/60 bg-transparent text-danger hover:bg-danger-soft disabled:border-hairline disabled:text-muted-soft",
 };
 
 // md is the 48px touch target used for anything tapped on a phone.
 const sizes: Record<Size, string> = {
-  md: "h-12 px-6 text-body",
-  sm: "h-9 px-4 text-body-sm",
+  md: "h-12 px-6 text-body-sm",
+  sm: "h-9 px-4 text-caption",
 };
 
 export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {

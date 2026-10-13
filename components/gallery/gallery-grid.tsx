@@ -75,7 +75,7 @@ function Tile({ item, onOpen }: { item: GalleryItem; onOpen: () => void }) {
         />
       )}
       {item.isVideo ? (
-        <span className="absolute bottom-1 left-1 rounded-full bg-scrim/70 px-2 py-0.5 text-badge text-canvas">
+        <span className="absolute bottom-1 left-1 rounded-full bg-black/70 px-2 py-0.5 text-badge text-white">
           Video
         </span>
       ) : null}
@@ -132,7 +132,7 @@ function Lightbox({
       ref={dialogRef}
       onClose={onClose}
       aria-label={item.fileName}
-      className="m-0 h-dvh max-h-none w-screen max-w-none border-0 bg-ink p-0 text-canvas backdrop:bg-scrim"
+      className="m-0 h-dvh max-h-none w-screen max-w-none border-0 bg-black p-0 text-white backdrop:bg-black"
     >
       <div className="flex h-full flex-col">
         <div className="flex items-center justify-between gap-3 p-3">
@@ -142,7 +142,7 @@ function Lightbox({
           <button
             type="button"
             onClick={() => dialogRef.current?.close()}
-            className="flex h-11 items-center rounded-full bg-canvas/15 px-4 text-body-sm font-medium"
+            className="flex h-11 items-center rounded-full bg-white/15 px-4 text-body-sm font-medium"
           >
             Close
           </button>
@@ -169,7 +169,7 @@ function Lightbox({
               type="button"
               onClick={() => go(-1)}
               aria-label="Previous"
-              className="absolute left-2 hidden h-11 w-11 items-center justify-center rounded-full bg-canvas/15 text-title-lg tablet:flex"
+              className="absolute left-2 hidden h-11 w-11 items-center justify-center rounded-full bg-white/15 text-title-lg tablet:flex"
             >
               ‹
             </button>
@@ -179,7 +179,7 @@ function Lightbox({
               type="button"
               onClick={() => go(1)}
               aria-label="Next"
-              className="absolute right-2 hidden h-11 w-11 items-center justify-center rounded-full bg-canvas/15 text-title-lg tablet:flex"
+              className="absolute right-2 hidden h-11 w-11 items-center justify-center rounded-full bg-white/15 text-title-lg tablet:flex"
             >
               ›
             </button>
@@ -191,7 +191,7 @@ function Lightbox({
             <span className="truncate text-body-sm font-medium">
               {item.fileName}
             </span>
-            <span className="text-caption text-canvas/70">
+            <span className="text-caption text-white/70">
               {item.caption}
               {item.uploadedBy ? ` · ${item.uploadedBy}` : ""} ·{" "}
               {formatBytes(item.sizeBytes)}
@@ -215,7 +215,7 @@ function Lightbox({
                 : { download: item.fileName })}
               className={
                 item.isVideo
-                  ? "flex h-12 flex-1 items-center justify-center rounded-sm border border-canvas/40 px-6 font-medium"
+                  ? "flex h-12 flex-1 items-center justify-center rounded-sm border border-white/40 px-6 font-medium"
                   : buttonClasses("primary", "md", "flex-1")
               }
             >
@@ -223,7 +223,7 @@ function Lightbox({
             </a>
           </div>
           {item.isVideo || opensInDrive ? (
-            <p className="text-caption text-canvas/70">
+            <p className="text-caption text-white/70">
               Opens in Google Drive. Use the same Google account you sign in
               here with.
             </p>
@@ -252,7 +252,7 @@ function LightboxImage({ item }: { item: GalleryItem }) {
 
   if (failed) {
     return (
-      <p className="px-6 text-center text-body-sm text-canvas/70">
+      <p className="px-6 text-center text-body-sm text-white/70">
         No preview yet. Google is still preparing it, or this file type has
         none. You can still download it.
       </p>
