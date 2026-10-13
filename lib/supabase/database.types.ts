@@ -350,6 +350,49 @@ export type Database = {
         Update: never;
         Relationships: [];
       };
+      share_links: {
+        Row: {
+          id: string;
+          token: string;
+          label: string;
+          service_id: string | null;
+          category_id: string | null;
+          allow_download: boolean;
+          expires_at: string | null;
+          revoked_at: string | null;
+          created_by: string | null;
+          created_at: string;
+          last_viewed_at: string | null;
+          view_count: number;
+        };
+        Insert: {
+          token: string;
+          label: string;
+          service_id?: string | null;
+          category_id?: string | null;
+          allow_download?: boolean;
+          expires_at?: string | null;
+          created_by?: string | null;
+        };
+        Update: { revoked_at?: string | null };
+        Relationships: [];
+      };
+      // Readable only with the secret key. See lib/share/drive.ts.
+      share_file_grants: {
+        Row: {
+          drive_file_id: string;
+          permission_id: string;
+          share_link_id: string;
+          created_at: string;
+        };
+        Insert: {
+          drive_file_id: string;
+          permission_id: string;
+          share_link_id: string;
+        };
+        Update: never;
+        Relationships: [];
+      };
       // Readable only with the secret key. See lib/google/grants.ts.
       drive_grants: {
         Row: {
@@ -411,6 +454,10 @@ export type Database = {
         Args: { p_assignment_id: string; p_category_id: string; p_done: boolean };
         Returns: undefined;
       };
+      record_share_view: {
+        Args: { p_share_id: string };
+        Returns: undefined;
+      };
       upload_analytics: {
         Args: { p_since: string };
         Returns: Json;
@@ -451,3 +498,4 @@ export type AssignmentCategory =
 export type Handoff = Database["public"]["Tables"]["handoffs"]["Row"];
 export type ServiceSeries =
   Database["public"]["Tables"]["service_series"]["Row"];
+export type ShareLink = Database["public"]["Tables"]["share_links"]["Row"];
