@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { CategoriesView } from "@/components/admin/categories-view";
 import { PeopleView } from "@/components/admin/people-view";
 import { ScheduleView } from "@/components/admin/schedule-view";
+import { SeriesForm } from "@/app/(app)/admin/schedule/series-form";
 import { SharesView } from "@/components/admin/shares-view";
 import { TeamsView } from "@/components/admin/teams-view";
 import { LoginView } from "@/components/auth/login-view";
@@ -144,6 +145,12 @@ export default async function PreviewPage({
         <AppShell user={previewUser} upload={previewUpload} currentPath="/admin/people">
           <PeopleView data={previewPeople} />
         </AppShell>
+      );
+    case "series-form":
+      return (
+        <main className="mx-auto max-w-lg p-6">
+          <SeriesForm />
+        </main>
       );
     case "schedule":
       return (

@@ -102,3 +102,39 @@ describe("recurring services", () => {
     );
   });
 });
+
+describe("series that skip weeks", () => {
+  it("accepts every other Wednesday with a Wednesday as its first date", async () => {
+    await db.as(
+      admin,
+      "insert into public.service_series (name, weekday, local_time, interval_weeks, anchor_date) values ('Women''s Midweek', 3, '19:30', 2, '2030-01-02')",
+    );
+  });
+
+  it("refuses a first date on the wrong weekday", async () => {
+    await expect(
+      db.as(
+        admin,
+        "insert into public.service_series (name, weekday, local_time, interval_weeks, anchor_date) values ('Men''s Midweek', 3, '19:30', 2, '2030-01-03')",
+      ),
+    ).rejects.toThrow(/service_series_anchor_weekday/);
+  });
+
+  it("refuses a series that skips weeks without a first date", async () => {
+    await expect(
+      db.as(
+        admin,
+        "insert into public.service_series (name, weekday, local_time, interval_weeks) values ('No start', 3, '19:30', 2)",
+      ),
+    ).rejects.toThrow(/service_series_anchor_needed/);
+  });
+
+  it("refuses more than every 4 weeks", async () => {
+    await expect(
+      db.as(
+        admin,
+        "insert into public.service_series (name, weekday, local_time, interval_weeks, anchor_date) values ('Rare', 3, '19:30', 6, '2030-01-02')",
+      ),
+    ).rejects.toThrow(/check constraint/);
+  });
+});

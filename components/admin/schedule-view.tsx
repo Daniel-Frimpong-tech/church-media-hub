@@ -16,6 +16,10 @@ export type SeriesCard = {
   weekday: number;
   /** "10:00 AM" */
   timeLabel: string;
+  /** "Every Wednesday", "Every other Wednesday" */
+  repeatLabel: string;
+  /** For a series that is not weekly: "Starting Oct 15". */
+  startLabel: string | null;
   active: boolean;
 };
 
@@ -75,18 +79,18 @@ export function ScheduleView({ data }: { data: ScheduleData }) {
     <div className="stagger flex flex-col gap-8">
       <AdminHeader
         title="Schedule"
-        description="Services that repeat every week are created for you a week ahead, with their Drive folders."
+        description="Services that repeat (every week, every other week…) are created for you a week ahead, with their Drive folders."
       />
 
       <section className="flex flex-col gap-3">
-        <h2 className="text-title-lg text-ink">Every week</h2>
+        <h2 className="text-title-lg text-ink">Repeating services</h2>
         <ul className="grid grid-cols-2 gap-3 tablet:grid-cols-3 tablet:gap-4 desktop:grid-cols-4">
           {data.series.map((series) => (
             <li key={series.id}>
               <Modal
                 title={series.name}
-                description={`Every ${WEEKDAYS[series.weekday]} at ${series.timeLabel}, Pacific time`}
-                triggerLabel={`Open ${series.name}, every ${WEEKDAYS[series.weekday]}`}
+                description={`${series.repeatLabel} at ${series.timeLabel}, Pacific time`}
+                triggerLabel={`Open ${series.name}, ${series.repeatLabel.toLowerCase()}`}
                 triggerClassName={cn(
                   "group flex h-full min-h-40 w-full flex-col gap-3 rounded-lg bg-surface p-4 text-left transition-colors hover:bg-surface-soft",
                   !series.active && "opacity-60",
@@ -112,7 +116,8 @@ export function ScheduleView({ data }: { data: ScheduleData }) {
                     <span className="mt-auto flex flex-col gap-1">
                       <span className="truncate text-title text-ink">{series.name}</span>
                       <span className="text-caption text-muted">
-                        Every {WEEKDAYS[series.weekday]}
+                        {series.repeatLabel}
+                        {series.startLabel ? ` · ${series.startLabel}` : ""}
                       </span>
                     </span>
                     {series.active ? null : <Badge className="self-start">Paused</Badge>}
@@ -149,13 +154,13 @@ export function ScheduleView({ data }: { data: ScheduleData }) {
           ))}
           <li>
             <Modal
-              title="New weekly service"
-              description="Created a week ahead, every week, with its Drive folders."
+              title="New repeating service"
+              description="Created a week ahead each time, with its Drive folders."
               triggerClassName={ADD_TILE}
               trigger={
                 <>
                   <CalendarPlus aria-hidden size={24} />
-                  New weekly service
+                  New repeating service
                 </>
               }
             >

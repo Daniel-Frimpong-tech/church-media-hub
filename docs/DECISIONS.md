@@ -936,3 +936,20 @@ refuses, and videos are not opened in Drive (which would let them be saved).
 **Why:** Hiding a button is not a control. The server refusing the request is.
 A preview can still be screenshotted, which the option's wording is honest
 about: it says they can look but not save the originals.
+
+## Services every other week
+
+### A repeat interval plus a first date
+
+**Choice:** A repeating service has an interval of 1 to 4 weeks. When it is
+not every week, it also has a first date, which fixes the weeks it falls on.
+Two series on the same weekday, every other week, starting a week apart,
+alternate (the women's midweek one Wednesday, the men's the next).
+
+**Why:** That is the church's real pattern, and two simple series express it
+without a special "alternating" type. Counting whole weeks from a fixed first
+date keeps the rhythm exact across daylight-saving changes and across any gap
+in when the job runs. The database refuses a first date on the wrong weekday,
+and an interval above 1 without a first date, so the schedule cannot quietly
+drift. Patterns like "the first Sunday of each month" are a different rule and
+are not covered yet.

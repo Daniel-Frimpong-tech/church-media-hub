@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { ScheduleView } from "@/components/admin/schedule-view";
 import { requireAdmin } from "@/lib/auth";
-import { describeRecurrence } from "@/lib/domain/recurrence";
-import { currentTime, formatChurchDateTime } from "@/lib/domain/time";
+import { describeRecurrence, repeatPhrase, WEEKDAYS } from "@/lib/domain/recurrence";
+import { currentTime, formatChurchDate, formatChurchDateTime } from "@/lib/domain/time";
 import type { JobResult } from "@/lib/jobs/run";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
@@ -52,6 +52,11 @@ export default async function SchedulePage() {
             weekday: item.weekday,
             localTime: item.local_time,
           }).split(" at ")[1],
+          repeatLabel: repeatPhrase(item.interval_weeks, WEEKDAYS[item.weekday] ?? "week"),
+          startLabel:
+            item.interval_weeks > 1 && item.anchor_date
+              ? `from ${formatChurchDate(`${item.anchor_date}T20:00:00Z`).replace(/, \d{4}$/, "")}`
+              : null,
           active: item.active,
         })),
         jobs: {

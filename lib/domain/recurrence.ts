@@ -24,7 +24,30 @@ export type Recurrence = {
   weekday: number;
   /** "HH:MM" or "HH:MM:SS", as Postgres returns a time. */
   localTime: string;
+  /** 1 = every week (the default), 2 = every other week, up to 4. */
+  intervalWeeks?: number;
+  /**
+   * "YYYY-MM-DD": the first occurrence. Needed when it is not every week, to
+   * say which weeks it falls on. Nothing is created before it.
+   */
+  anchorDate?: string | null;
 };
+
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * Whether a church-calendar day ("YYYY-MM-DD", already the right weekday) is
+ * one this series runs on.
+ */
+export function runsOnDay(recurrence: Recurrence, isoDay: string): boolean {
+  const interval = recurrence.intervalWeeks ?? 1;
+  if (!recurrence.anchorDate) return interval === 1;
+  const weeks = Math.round(
+    (Date.parse(`${isoDay}T12:00:00Z`) - Date.parse(`${recurrence.anchorDate}T12:00:00Z`)) /
+      WEEK_MS,
+  );
+  return weeks >= 0 && weeks % interval === 0;
+}
 
 /**
  * The occurrences of a weekly service that start after `now` and within the
@@ -43,8 +66,9 @@ export function upcomingSlots(
   const day = new Date(`${churchIsoDate(now)}T12:00:00Z`);
   const slots: Date[] = [];
   for (let step = 0; step <= daysAhead + 1; step++) {
-    if (day.getUTCDay() === recurrence.weekday) {
-      const slot = churchLocalToUtc(day.toISOString().slice(0, 10), time);
+    const isoDay = day.toISOString().slice(0, 10);
+    if (day.getUTCDay() === recurrence.weekday && runsOnDay(recurrence, isoDay)) {
+      const slot = churchLocalToUtc(isoDay, time);
       if (slot && slot.getTime() > now.getTime() && slot.getTime() <= horizon) {
         slots.push(slot);
       }
@@ -54,10 +78,25 @@ export function upcomingSlots(
   return slots;
 }
 
-/** "Every Sunday at 10:00 AM" */
+/** "Every Sunday at 10:00 AM", "Every other Wednesday at 7:30 PM" */
 export function describeRecurrence(recurrence: Recurrence): string {
   const [hour, minute] = recurrence.localTime.split(":").map(Number);
   const period = hour >= 12 ? "PM" : "AM";
   const displayHour = hour % 12 === 0 ? 12 : hour % 12;
-  return `Every ${WEEKDAYS[recurrence.weekday] ?? "week"} at ${displayHour}:${String(minute).padStart(2, "0")} ${period}`;
+  const day = WEEKDAYS[recurrence.weekday] ?? "week";
+  return `${repeatPhrase(recurrence.intervalWeeks ?? 1, day)} at ${displayHour}:${String(minute).padStart(2, "0")} ${period}`;
 }
+
+/** "Every Wednesday", "Every other Wednesday", "Every 3 weeks on Wednesday" */
+export function repeatPhrase(intervalWeeks: number, day: string): string {
+  if (intervalWeeks <= 1) return `Every ${day}`;
+  if (intervalWeeks === 2) return `Every other ${day}`;
+  return `Every ${intervalWeeks} weeks on ${day}`;
+}
+
+export const REPEAT_CHOICES = [
+  { value: "1", label: "Every week" },
+  { value: "2", label: "Every other week" },
+  { value: "3", label: "Every 3 weeks" },
+  { value: "4", label: "Every 4 weeks" },
+] as const;

@@ -27,7 +27,12 @@ export async function createRecurringServices(now: Date): Promise<number> {
   let created = 0;
   for (const series of seriesList ?? []) {
     const slots = upcomingSlots(
-      { weekday: series.weekday, localTime: series.local_time },
+      {
+        weekday: series.weekday,
+        localTime: series.local_time,
+        intervalWeeks: series.interval_weeks,
+        anchorDate: series.anchor_date,
+      },
       now,
     );
     for (const slot of slots) {
