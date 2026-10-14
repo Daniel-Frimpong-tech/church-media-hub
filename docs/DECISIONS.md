@@ -936,3 +936,36 @@ refuses, and videos are not opened in Drive (which would let them be saved).
 **Why:** Hiding a button is not a control. The server refusing the request is.
 A preview can still be screenshotted, which the option's wording is honest
 about: it says they can look but not save the originals.
+
+## Services every other week
+
+### A repeat interval plus a first date
+
+**Choice:** A repeating service has an interval of 1 to 4 weeks. When it is
+not every week, it also has a first date, which fixes the weeks it falls on.
+Two series on the same weekday, every other week, starting a week apart,
+alternate (the women's midweek one Wednesday, the men's the next).
+
+**Why:** That is the church's real pattern, and two simple series express it
+without a special "alternating" type. Counting whole weeks from a fixed first
+date keeps the rhythm exact across daylight-saving changes and across any gap
+in when the job runs. The database refuses a first date on the wrong weekday,
+and an interval above 1 without a first date, so the schedule cannot quietly
+drift. Patterns like "the first Sunday of each month" are a different rule and
+are not covered yet.
+
+## Announcing a service on its day
+
+**Choice:** The Telegram post with a service's upload link goes out at 7:00 AM
+(Pacific) on the day of the service, or two hours before it if it starts
+earlier than 9:00 AM. It tags the people covering it, with what each is
+uploading. Creating a service, by hand or from the schedule, posts nothing.
+
+**Why:** Recurring services are created a week ahead, so announcing them on
+creation put a link in the group a week early, where it was buried by the time
+anyone needed it. On the morning of the service, it is the link people are
+about to use. The post comes from the same scheduled sweep as reminders, with
+the same once-only key, so it is sent exactly once; a service created later
+that same day is announced within a few minutes, and one whose day has passed
+is never announced. A service without its Drive folders is not announced,
+because there would be nowhere to upload.

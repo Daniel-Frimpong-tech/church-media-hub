@@ -152,12 +152,16 @@ export type Database = {
           active: boolean;
           created_by: string | null;
           created_at: string;
+          interval_weeks: number;
+          anchor_date: string | null;
         };
         Insert: {
           name: string;
           weekday: number;
           local_time: string;
           created_by?: string | null;
+          interval_weeks?: number;
+          anchor_date?: string | null;
         };
         Update: { name?: string; active?: boolean };
         Relationships: [];

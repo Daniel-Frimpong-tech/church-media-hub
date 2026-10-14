@@ -36,7 +36,7 @@ coordinate in a Telegram group. That left the same problems each week:
   one service, or the whole gallery. Links can expire and can be turned off.
 - **Assignments and handoffs:** who covers what, what is still missing, and what
   each receiving team is waiting for.
-- **Telegram bot:** announces new services, sends upload reminders, tells teams
+- **Telegram bot:** posts each service's upload link on the morning of the service, sends upload reminders, tells teams
   when their content is ready and flags late handoffs.
 
 ## How it is built

@@ -10,7 +10,7 @@ import {
   handoffReadyMessage,
   joinList,
   mention,
-  serviceCreatedMessage,
+  serviceDayMessage,
   uploadReminderMessage,
   type ReminderTarget,
 } from "@/lib/telegram/messages";
@@ -50,11 +50,23 @@ describe("joinList", () => {
   });
 });
 
-describe("serviceCreatedMessage", () => {
-  it("links to the service page and escapes the service name", () => {
-    const message = serviceCreatedMessage({ ...service, name: "Youth <Night>" });
-    expect(message).toContain("Youth &lt;Night&gt;");
+describe("serviceDayMessage", () => {
+  const today = { ...service, time: "10:00 AM" };
+
+  it("links to the service and escapes its name", () => {
+    const message = serviceDayMessage({ ...today, name: "Youth <Night>" }, []);
+    expect(message).toContain("Today: Youth &lt;Night&gt;</b>, 10:00 AM");
     expect(message).toContain('<a href="https://app.example/services/1">');
+    expect(message).not.toContain("Covering today");
+  });
+
+  it("tags who is covering, with what they are uploading", () => {
+    const message = serviceDayMessage(today, [
+      { name: "Grace", telegramUserId: 42, categories: ["Preacher", "Baptism"] },
+      { name: "Sam", telegramUserId: null, categories: [] },
+    ]);
+    expect(message).toContain('• <a href="tg://user?id=42">Grace</a>: Preacher and Baptism');
+    expect(message).toContain("• Sam");
   });
 });
 

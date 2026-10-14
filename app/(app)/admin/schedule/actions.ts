@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
+import { WEEKDAYS } from "@/lib/domain/recurrence";
 import type { FormState } from "@/lib/form-state";
 import { runScheduledJobs } from "@/lib/jobs/run";
 import { createClient } from "@/lib/supabase/server";
@@ -32,11 +33,31 @@ export async function createSeries(
     return { error: "Choose a valid time." };
   }
 
+  const intervalWeeks = Number(field(formData, "interval_weeks") || "1");
+  if (![1, 2, 3, 4].includes(intervalWeeks)) return { error: "Choose how often it repeats." };
+
+  // Not every week: the first date fixes which weeks it falls on.
+  let anchorDate: string | null = null;
+  if (intervalWeeks > 1) {
+    anchorDate = field(formData, "anchor_date");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(anchorDate) || Number.isNaN(Date.parse(anchorDate))) {
+      return { error: "Choose the date of the first one." };
+    }
+    const anchorWeekday = new Date(`${anchorDate}T12:00:00Z`).getUTCDay();
+    if (anchorWeekday !== weekday) {
+      return {
+        error: `That date is a ${WEEKDAYS[anchorWeekday]}. Pick a ${WEEKDAYS[weekday]}.`,
+      };
+    }
+  }
+
   const supabase = await createClient();
   const { error } = await supabase.from("service_series").insert({
     name,
     weekday,
     local_time: time,
+    interval_weeks: intervalWeeks,
+    anchor_date: anchorDate,
     created_by: admin.id,
   });
   if (error) return { error: GENERIC_ERROR };
