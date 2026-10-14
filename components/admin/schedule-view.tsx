@@ -45,10 +45,11 @@ function summarize(result: JobResult): string[] {
       `Created Drive folders for ${count(result.foldersFixed, "service", "services")} that had failed.`,
     );
   }
-  const messages = result.reminders + result.readyNotices + result.lateNotices;
+  const announced = result.servicesAnnounced ?? 0;
+  const messages = announced + result.reminders + result.readyNotices + result.lateNotices;
   if (messages > 0) {
     lines.push(
-      `Posted ${count(messages, "Telegram message", "Telegram messages")} (${result.reminders} reminders, ${result.readyNotices} ready, ${result.lateNotices} late).`,
+      `Posted ${count(messages, "Telegram message", "Telegram messages")} (${announced} for today's services, ${result.reminders} reminders, ${result.readyNotices} ready, ${result.lateNotices} late).`,
     );
   }
   if (!result.telegramLinked) {

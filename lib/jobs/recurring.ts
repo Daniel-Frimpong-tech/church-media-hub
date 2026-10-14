@@ -1,7 +1,6 @@
 import "server-only";
 
 import { upcomingSlots } from "@/lib/domain/recurrence";
-import { announceServiceCreated } from "@/lib/notifications/telegram";
 import { ensureServiceFolders } from "@/lib/services/folders";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -9,7 +8,7 @@ const UNIQUE_VIOLATION = "23505";
 
 /**
  * Creates the next occurrence of every active recurring service, with its
- * Drive folders, and announces it. Safe to run repeatedly: a unique index on
+ * Drive folders. The team is told on the day, not now. Safe to run repeatedly: a unique index on
  * (series, occurrence) means each one is created once.
  */
 export async function createRecurringServices(now: Date): Promise<number> {
@@ -59,8 +58,8 @@ export async function createRecurringServices(now: Date): Promise<number> {
       }
 
       created += 1;
-      const folders = await ensureServiceFolders(admin, service.id);
-      if (folders.ok) await announceServiceCreated(service.id);
+      // Announced on the morning of the service, by the notification sweep.
+      await ensureServiceFolders(admin, service.id);
     }
   }
   return created;
@@ -82,10 +81,7 @@ export async function retryFailedFolders(now: Date): Promise<number> {
   let fixed = 0;
   for (const service of services ?? []) {
     const folders = await ensureServiceFolders(admin, service.id);
-    if (folders.ok) {
-      fixed += 1;
-      await announceServiceCreated(service.id);
-    }
+    if (folders.ok) fixed += 1;
   }
   return fixed;
 }

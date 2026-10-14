@@ -1,16 +1,22 @@
 import "server-only";
 
 import { outstandingByPerson, outstandingTasks } from "@/lib/domain/assignments";
-import { dueReminderStage, reminderDueAt } from "@/lib/domain/reminders";
-import { formatChurchDate, formatChurchDateTime } from "@/lib/domain/time";
+import {
+  dueReminderStage,
+  isServiceDayPostDue,
+  reminderDueAt,
+  serviceDayPostAt,
+} from "@/lib/domain/reminders";
+import { formatChurchDate, formatChurchDateTime, formatChurchTime } from "@/lib/domain/time";
 import { appUrl, telegramBotToken } from "@/lib/env";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { sendMessage } from "@/lib/telegram/client";
 import {
   handoffLateMessage,
   handoffReadyMessage,
-  serviceCreatedMessage,
+  serviceDayMessage,
   uploadReminderMessage,
+  type CoveringPerson,
   type Recipient,
   type ReminderTarget,
 } from "@/lib/telegram/messages";
@@ -88,28 +94,63 @@ function serviceInfo(service: { id: string; name: string; starts_at: string }) {
   };
 }
 
-/** Posts "folders are ready" with a link to the service. Once per service. */
-export async function announceServiceCreated(serviceId: string): Promise<void> {
-  try {
-    const group = await getGroup();
-    if (!group) return;
-    const { data: service } = await createAdminClient()
-      .from("services")
-      .select("id, name, starts_at, drive_folder_status")
-      .eq("id", serviceId)
-      .maybeSingle();
-    if (!service || service.drive_folder_status !== "ready") return;
+/**
+ * Posts "today's service" with the upload link and who is covering it, on the
+ * morning of the service (see isServiceDayPostDue). Once per service.
+ */
+async function announceServiceDay(
+  group: Group,
+  service: { id: string; name: string; starts_at: string },
+): Promise<boolean> {
+  const admin = createAdminClient();
+  const { data: assignments } = await admin
+    .from("assignments")
+    .select("id, profile_id")
+    .eq("service_id", service.id);
 
-    await sendOnce(
-      group,
-      "service_created",
-      `service_created:${service.id}`,
-      service.id,
-      serviceCreatedMessage(serviceInfo(service)),
-    );
-  } catch (error) {
-    console.error("Announcing a service failed", error);
+  let covering: CoveringPerson[] = [];
+  if (assignments && assignments.length > 0) {
+    const [tasks, categories, people] = await Promise.all([
+      admin
+        .from("assignment_categories")
+        .select("assignment_id, category_id")
+        .in("assignment_id", assignments.map((assignment) => assignment.id)),
+      admin.from("categories").select("id, name"),
+      admin
+        .from("profiles")
+        .select("id, full_name, telegram_user_id, active")
+        .in("id", assignments.map((assignment) => assignment.profile_id)),
+    ]);
+    const categoryName = new Map((categories.data ?? []).map((row) => [row.id, row.name]));
+    const byPerson = new Map<string, string[]>();
+    for (const assignment of assignments) {
+      const names = byPerson.get(assignment.profile_id) ?? [];
+      for (const task of tasks.data ?? []) {
+        if (task.assignment_id !== assignment.id) continue;
+        const name = categoryName.get(task.category_id);
+        if (name && !names.includes(name)) names.push(name);
+      }
+      byPerson.set(assignment.profile_id, names);
+    }
+    covering = (people.data ?? [])
+      .filter((person) => person.active)
+      .map((person) => ({
+        name: person.full_name,
+        telegramUserId: person.telegram_user_id,
+        categories: byPerson.get(person.id) ?? [],
+      }));
   }
+
+  return sendOnce(
+    group,
+    "service_day",
+    `service_day:${service.id}`,
+    service.id,
+    serviceDayMessage(
+      { ...serviceInfo(service), time: formatChurchTime(service.starts_at) },
+      covering,
+    ),
+  );
 }
 
 /** Who still owes what for a service, ready to be tagged. */
@@ -218,6 +259,8 @@ export async function sendUploadReminder(
 
 export type SweepResult = {
   linked: boolean;
+  /** "Today's service" posts. */
+  servicesAnnounced: number;
   reminders: number;
   ready: number;
   late: number;
@@ -231,7 +274,13 @@ export type SweepResult = {
  * group does not unleash a backlog of old alerts.
  */
 export async function sendDueNotifications(now: Date = new Date()): Promise<SweepResult> {
-  const result: SweepResult = { linked: false, reminders: 0, ready: 0, late: 0 };
+  const result: SweepResult = {
+    linked: false,
+    servicesAnnounced: 0,
+    reminders: 0,
+    ready: 0,
+    late: 0,
+  };
   try {
     const group = await getGroup();
     if (!group) return result;
@@ -245,6 +294,24 @@ export async function sendDueNotifications(now: Date = new Date()): Promise<Swee
       .gte("starts_at", since)
       .lte("starts_at", now.toISOString());
     const recent = services ?? [];
+
+    // ── Today's services ──
+    // Services happening today (church time). A day's window is at most 25
+    // hours either side of now, so this catches every one of them.
+    const { data: todays } = await admin
+      .from("services")
+      .select("id, name, starts_at, drive_folder_status")
+      .gte("starts_at", new Date(now.getTime() - 25 * 60 * 60 * 1000).toISOString())
+      .lte("starts_at", new Date(now.getTime() + 25 * 60 * 60 * 1000).toISOString());
+    for (const service of todays ?? []) {
+      const startsAt = new Date(service.starts_at);
+      if (!isServiceDayPostDue(startsAt, now)) continue;
+      // No upload link to give until its Drive folders exist.
+      if (service.drive_folder_status !== "ready") continue;
+      // Not for days that came before the group was linked.
+      if (serviceDayPostAt(startsAt) < group.linkedAt && startsAt < group.linkedAt) continue;
+      if (await announceServiceDay(group, service)) result.servicesAnnounced += 1;
+    }
 
     // ── Upload reminders ──
     for (const service of recent) {

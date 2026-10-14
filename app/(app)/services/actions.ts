@@ -9,7 +9,6 @@ import { getDriveSession } from "@/lib/google/connection";
 import { DriveError, moveToBin, renameFile } from "@/lib/google/drive";
 import type { FormState } from "@/lib/form-state";
 import {
-  announceServiceCreated,
   sendDueNotifications,
   sendUploadReminder,
 } from "@/lib/notifications/telegram";
@@ -46,9 +45,10 @@ export async function createService(
 
   // The service is saved either way. If Drive fails, the service page shows
   // why and offers a retry, so a Google hiccup never loses the service.
-  const folders = await ensureServiceFolders(supabase, service.id);
-  // Tell the team group, after the response so Telegram never slows this down.
-  if (folders.ok) after(() => announceServiceCreated(service.id));
+  // The team group hears about it on the morning of the service (scheduled
+  // job), not now. A service created for today is announced within minutes.
+  await ensureServiceFolders(supabase, service.id);
+  after(() => sendDueNotifications());
 
   // Everything, including the shell: the new service belongs in the upload
   // sheet's list straight away.
@@ -71,7 +71,7 @@ export async function retryServiceFolders(
   revalidatePath(`/services/${serviceId}`);
   revalidatePath("/services");
   if (!result.ok) return { error: result.message };
-  after(() => announceServiceCreated(serviceId));
+  after(() => sendDueNotifications());
   return { success: "Drive folders are ready." };
 }
 

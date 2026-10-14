@@ -429,6 +429,7 @@ export const previewSchedule: ScheduleData = {
     lastResult: {
       servicesCreated: 1,
       foldersFixed: 0,
+      servicesAnnounced: 1,
       reminders: 1,
       readyNotices: 0,
       lateNotices: 1,

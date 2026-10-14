@@ -44,11 +44,38 @@ export function joinList(items: string[]): string {
 
 type ServiceInfo = { name: string; date: string; url: string };
 
-export function serviceCreatedMessage(service: ServiceInfo): string {
-  return [
-    `📁 <b>${escapeHtml(service.name)}</b>, ${escapeHtml(service.date)}`,
-    `Folders are ready. Upload here: ${link("open the service", service.url)}`,
-  ].join("\n");
+export type CoveringPerson = Recipient & {
+  /** Categories they are down to upload today. */
+  categories: string[];
+};
+
+/**
+ * The morning of a service: what is on, the link to upload to, and who is
+ * covering it (tagged, so they see it).
+ */
+export function serviceDayMessage(
+  service: ServiceInfo & { time: string },
+  covering: CoveringPerson[],
+): string {
+  const lines = [
+    `📸 <b>Today: ${escapeHtml(service.name)}</b>, ${escapeHtml(service.time)}`,
+    `Upload photos and videos here: ${link("open the service", service.url)}`,
+  ];
+  if (covering.length > 0) {
+    lines.push(
+      "",
+      "Covering today:",
+      ...covering.map(
+        (person) =>
+          `• ${mention(person)}${
+            person.categories.length > 0
+              ? `: ${escapeHtml(joinList(person.categories))}`
+              : ""
+          }`,
+      ),
+    );
+  }
+  return lines.join("\n");
 }
 
 export type ReminderTarget = Recipient & {

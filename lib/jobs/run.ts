@@ -10,6 +10,8 @@ import { createRecurringServices, retryFailedFolders } from "./recurring";
 export type JobResult = {
   servicesCreated: number;
   foldersFixed: number;
+  /** "Today's service" posts in Telegram. */
+  servicesAnnounced: number;
   reminders: number;
   readyNotices: number;
   lateNotices: number;
@@ -29,6 +31,7 @@ export async function runScheduledJobs(now: Date = new Date()): Promise<JobResul
   const result: JobResult = {
     servicesCreated: 0,
     foldersFixed: 0,
+    servicesAnnounced: 0,
     reminders: 0,
     readyNotices: 0,
     lateNotices: 0,
@@ -56,6 +59,7 @@ export async function runScheduledJobs(now: Date = new Date()): Promise<JobResul
   await step("send notifications", async () => {
     const sweep = await sendDueNotifications(now);
     result.telegramLinked = sweep.linked;
+    result.servicesAnnounced = sweep.servicesAnnounced;
     result.reminders = sweep.reminders;
     result.readyNotices = sweep.ready;
     result.lateNotices = sweep.late;
