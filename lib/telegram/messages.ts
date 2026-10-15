@@ -104,6 +104,33 @@ export function uploadReminderMessage(
   ].join("\n");
 }
 
+export type UploadSummaryEntry = {
+  name: string;
+  categoryName: string;
+  /** "24 photos and 2 videos" */
+  files: string;
+};
+
+/**
+ * The running list of who uploaded what for a service. The same message is
+ * edited as more come in. Names are not tagged: telling someone about their
+ * own upload is noise. Null when there is nothing to list.
+ */
+export function uploadSummaryMessage(
+  service: ServiceInfo,
+  entries: UploadSummaryEntry[],
+): string | null {
+  if (entries.length === 0) return null;
+  return [
+    `📤 Uploads for <b>${escapeHtml(service.name)}</b>, ${escapeHtml(service.date)}`,
+    ...entries.map(
+      (entry) =>
+        `✅ ${escapeHtml(entry.name)} uploaded ${escapeHtml(entry.files)} to ${escapeHtml(entry.categoryName)}`,
+    ),
+    link("Open the service", service.url),
+  ].join("\n");
+}
+
 type HandoffInfo = {
   categoryName: string;
   teamName: string;

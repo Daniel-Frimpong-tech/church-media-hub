@@ -969,3 +969,20 @@ the same once-only key, so it is sent exactly once; a service created later
 that same day is announced within a few minutes, and one whose day has passed
 is never announced. A service without its Drive folders is not announced,
 because there would be nowhere to upload.
+
+## One "who uploaded what" message per service
+
+**Choice:** When someone's batch of uploads finishes, the bot posts a message
+in the team group listing who uploaded what for that service ("✅ Daniel
+uploaded 24 photos to Baptism"). It is one message per service: later batches
+edit it to add or update their line, rather than posting again. Names are not
+tagged.
+
+**Why:** The team wanted to see uploads land without the group filling up. A
+message per file, or even per batch, would bury the reminders and handoff
+alerts that people need to act on. The upload sheet reports when a batch ends,
+so the post is immediate; the scheduled sweep catches a batch whose sheet was
+closed before it could report, but only once no file has finished for two
+minutes, so a batch still going up is not edited once per file. The message ID
+and the last text sent are kept in `notification_log`, so the sweep edits only
+when something changed, and two callers cannot both send or both edit.

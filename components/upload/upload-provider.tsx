@@ -30,7 +30,7 @@ import { Button, buttonClasses } from "@/components/ui/button";
 import { ProgressRing } from "@/components/ui/progress-ring";
 import { cn } from "@/lib/cn";
 import { formatBytes } from "@/lib/domain/uploads";
-import { fetchUploadService } from "@/app/(app)/upload-actions";
+import { fetchUploadService, uploadsFinished } from "@/app/(app)/upload-actions";
 import { UploadQueue, type UploadItem } from "@/lib/uploads/queue";
 
 /** A service someone can upload to right now, with its categories. */
@@ -152,12 +152,22 @@ export function UploadProvider({
     return () => window.removeEventListener("beforeunload", warn);
   }, [busy]);
 
-  // When a batch finishes, refresh the page underneath: counts, covers, albums.
+  // When a batch finishes, refresh the page underneath (counts, covers,
+  // albums) and let the team's Telegram group know who uploaded what.
   const wasBusy = useRef(false);
+  const reported = useRef(new Set<string>());
   useEffect(() => {
-    if (wasBusy.current && !busy) router.refresh();
+    if (wasBusy.current && !busy) {
+      router.refresh();
+      const finished = items.filter(
+        (item) => item.status === "done" && !reported.current.has(item.id),
+      );
+      for (const item of finished) reported.current.add(item.id);
+      const serviceIds = [...new Set(finished.map((item) => item.serviceId))];
+      if (serviceIds.length > 0) void uploadsFinished(serviceIds).catch(() => {});
+    }
     wasBusy.current = busy;
-  }, [busy, router]);
+  }, [busy, items, router]);
 
   function addFiles(files: File[]) {
     if (!service || !category || files.length === 0) return;
