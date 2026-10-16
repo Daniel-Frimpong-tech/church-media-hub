@@ -45,7 +45,7 @@ export function AddAssignmentForm({
         </Select>
       </div>
 
-      <fieldset className="flex flex-col gap-2">
+      <fieldset className="flex min-w-0 flex-col gap-2">
         <legend className="mb-2 text-body-sm font-medium text-ink">
           Expected to upload
         </legend>

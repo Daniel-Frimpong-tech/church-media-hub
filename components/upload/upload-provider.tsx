@@ -274,7 +274,7 @@ function UploadSheet({
           </button>
         </div>
 
-        <div className="flex flex-col gap-5 overflow-y-auto p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+        <div className="flex min-w-0 flex-col gap-5 overflow-x-hidden overflow-y-auto p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
           {lookup === "loading" ? (
             <p role="status" className="rounded-lg bg-surface-soft p-4 text-body-sm text-muted">
               Opening that service…
@@ -298,7 +298,7 @@ function UploadSheet({
             </div>
           ) : (
             <>
-              <fieldset className="flex flex-col gap-2">
+              <fieldset className="flex min-w-0 flex-col gap-2">
                 <legend className="mb-2 text-label text-muted uppercase">Service</legend>
                 <div className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5">
                   {services.map((entry) => {
@@ -337,7 +337,7 @@ function UploadSheet({
                 </div>
               </fieldset>
 
-              <fieldset className="flex flex-col gap-2">
+              <fieldset className="flex min-w-0 flex-col gap-2">
                 <legend className="mb-2 text-label text-muted uppercase">Upload to</legend>
                 <div className="flex flex-wrap gap-2">
                   {service.categories.map((entry) => {
