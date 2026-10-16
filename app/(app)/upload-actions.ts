@@ -1,7 +1,10 @@
 "use server";
 
+import { after } from "next/server";
 import type { UploadService } from "@/components/upload/upload-provider";
 import { getProfile } from "@/lib/auth";
+import { can } from "@/lib/domain/permissions";
+import { announceUploads } from "@/lib/notifications/telegram";
 import { loadUploadService } from "@/lib/upload-targets";
 import { isUuid } from "@/lib/uploads/api";
 
@@ -14,4 +17,15 @@ export async function fetchUploadService(serviceId: string): Promise<UploadServi
   const profile = await getProfile();
   if (!profile || !isUuid(serviceId)) return null;
   return loadUploadService(profile, serviceId);
+}
+
+/**
+ * Tells the team's Telegram group who uploaded what, once a batch of uploads
+ * has finished. Posting happens after the reply, so the sheet never waits.
+ */
+export async function uploadsFinished(serviceIds: string[]): Promise<void> {
+  const profile = await getProfile();
+  if (!profile || !can(profile.role, "upload_media")) return;
+  const ids = [...new Set(serviceIds.filter(isUuid))].slice(0, 5);
+  if (ids.length > 0) after(() => announceUploads(ids));
 }

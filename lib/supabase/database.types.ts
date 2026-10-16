@@ -345,13 +345,23 @@ export type Database = {
           dedupe_key: string;
           service_id: string | null;
           sent_at: string;
+          telegram_chat_id: number | null;
+          telegram_message_id: number | null;
+          body: string | null;
         };
         Insert: {
           kind: string;
           dedupe_key: string;
           service_id?: string | null;
+          telegram_chat_id?: number | null;
+          telegram_message_id?: number | null;
+          body?: string | null;
         };
-        Update: never;
+        Update: {
+          telegram_chat_id?: number | null;
+          telegram_message_id?: number | null;
+          body?: string | null;
+        };
         Relationships: [];
       };
       share_links: {

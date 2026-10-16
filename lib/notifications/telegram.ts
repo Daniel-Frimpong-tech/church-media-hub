@@ -7,15 +7,21 @@ import {
   reminderDueAt,
   serviceDayPostAt,
 } from "@/lib/domain/reminders";
+import {
+  countFiles,
+  summarizeUploads,
+  UPLOAD_SUMMARY_QUIET_MS,
+} from "@/lib/domain/upload-summary";
 import { formatChurchDate, formatChurchDateTime, formatChurchTime } from "@/lib/domain/time";
 import { appUrl, telegramBotToken } from "@/lib/env";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { sendMessage } from "@/lib/telegram/client";
+import { editMessageText, sendMessage } from "@/lib/telegram/client";
 import {
   handoffLateMessage,
   handoffReadyMessage,
   serviceDayMessage,
   uploadReminderMessage,
+  uploadSummaryMessage,
   type CoveringPerson,
   type Recipient,
   type ReminderTarget,
@@ -153,6 +159,133 @@ async function announceServiceDay(
   );
 }
 
+/**
+ * Posts, or brings up to date, the "who uploaded what" message for a service.
+ * There is one per service: the first call sends it and later calls edit it,
+ * so the group sees a single list that grows rather than a message per batch.
+ */
+async function postUploadSummary(
+  group: Group,
+  serviceId: string,
+): Promise<"sent" | "updated" | "unchanged"> {
+  const admin = createAdminClient();
+  const [{ data: service }, { data: uploads }] = await Promise.all([
+    admin.from("services").select("id, name, starts_at").eq("id", serviceId).maybeSingle(),
+    admin
+      .from("uploads")
+      .select("uploaded_by, category_id, mime_type, completed_at")
+      .eq("service_id", serviceId)
+      .eq("status", "complete"),
+  ]);
+  if (!service) return "unchanged";
+
+  const lines = summarizeUploads(
+    (uploads ?? []).map((upload) => ({
+      uploadedBy: upload.uploaded_by,
+      categoryId: upload.category_id,
+      mimeType: upload.mime_type,
+      completedAt: upload.completed_at ?? "",
+    })),
+  );
+  const profileIds = [...new Set(lines.flatMap((line) => line.uploadedBy ?? []))];
+  const [categories, people] = await Promise.all([
+    admin.from("categories").select("id, name"),
+    profileIds.length > 0
+      ? admin.from("profiles").select("id, full_name").in("id", profileIds)
+      : Promise.resolve({ data: [] as { id: string; full_name: string }[] }),
+  ]);
+  const categoryName = new Map((categories.data ?? []).map((row) => [row.id, row.name]));
+  const personName = new Map((people.data ?? []).map((row) => [row.id, row.full_name]));
+
+  const html = uploadSummaryMessage(
+    serviceInfo(service),
+    lines.map((line) => ({
+      name: (line.uploadedBy && personName.get(line.uploadedBy)) || "Someone",
+      categoryName: categoryName.get(line.categoryId) ?? "a category",
+      files: countFiles(line.photos, line.videos),
+    })),
+  );
+  // Everything was deleted: leave the last post as it was.
+  if (!html) return "unchanged";
+
+  const key = `upload_summary:${serviceId}`;
+  const { data: existing } = await admin
+    .from("notification_log")
+    .select("telegram_chat_id, telegram_message_id, body")
+    .eq("dedupe_key", key)
+    .maybeSingle();
+
+  const sendNew = async (): Promise<boolean> => {
+    const sent = await sendMessage(group.chatId, html);
+    if (!sent.ok) {
+      console.error(`Telegram upload summary failed: ${sent.description}`);
+      return false;
+    }
+    await admin
+      .from("notification_log")
+      .update({
+        telegram_chat_id: group.chatId,
+        telegram_message_id: sent.result.message_id,
+        body: html,
+      })
+      .eq("dedupe_key", key);
+    return true;
+  };
+
+  if (!existing) {
+    // Whoever inserts the row sends the message; anyone racing them stops here.
+    const claim = await admin
+      .from("notification_log")
+      .insert({ kind: "upload_summary", dedupe_key: key, service_id: serviceId, body: html });
+    if (claim.error) return "unchanged";
+    if (await sendNew()) return "sent";
+    await admin.from("notification_log").delete().eq("dedupe_key", key);
+    return "unchanged";
+  }
+
+  // Still being sent by someone else, or nothing new to show.
+  if (!existing.telegram_message_id || existing.body === html) return "unchanged";
+
+  // Claim this change, so two callers do not both edit with the same news.
+  const { data: claimed } = await admin
+    .from("notification_log")
+    .update({ body: html })
+    .eq("dedupe_key", key)
+    .eq("body", existing.body ?? "")
+    .select("id");
+  if (!claimed || claimed.length === 0) return "unchanged";
+
+  // The group was relinked to another chat: start a fresh message there.
+  if (existing.telegram_chat_id !== group.chatId) {
+    return (await sendNew()) ? "sent" : "unchanged";
+  }
+  const edited = await editMessageText(group.chatId, existing.telegram_message_id, html);
+  if (edited.ok || edited.description.includes("message is not modified")) return "updated";
+  // Someone deleted the message in Telegram: post it again.
+  if (edited.description.includes("message to edit not found")) {
+    return (await sendNew()) ? "sent" : "unchanged";
+  }
+  console.error(`Telegram upload summary edit failed: ${edited.description}`);
+  // Let the next sweep try again.
+  await admin.from("notification_log").update({ body: null }).eq("dedupe_key", key);
+  return "unchanged";
+}
+
+/**
+ * Called when someone's batch of uploads finishes, so the group hears about
+ * it straight away. The scheduled sweep catches batches that never told us,
+ * for example when the app was closed as the last file finished.
+ */
+export async function announceUploads(serviceIds: string[]): Promise<void> {
+  try {
+    const group = await getGroup();
+    if (!group) return;
+    for (const serviceId of serviceIds) await postUploadSummary(group, serviceId);
+  } catch (error) {
+    console.error("Posting the upload summary failed", error);
+  }
+}
+
 /** Who still owes what for a service, ready to be tagged. */
 async function reminderTargets(serviceId: string): Promise<ReminderTarget[]> {
   const admin = createAdminClient();
@@ -261,6 +394,8 @@ export type SweepResult = {
   linked: boolean;
   /** "Today's service" posts. */
   servicesAnnounced: number;
+  /** "Who uploaded what" posts sent or brought up to date. */
+  uploadSummaries: number;
   reminders: number;
   ready: number;
   late: number;
@@ -277,6 +412,7 @@ export async function sendDueNotifications(now: Date = new Date()): Promise<Swee
   const result: SweepResult = {
     linked: false,
     servicesAnnounced: 0,
+    uploadSummaries: 0,
     reminders: 0,
     ready: 0,
     late: 0,
@@ -311,6 +447,27 @@ export async function sendDueNotifications(now: Date = new Date()): Promise<Swee
       // Not for days that came before the group was linked.
       if (serviceDayPostAt(startsAt) < group.linkedAt && startsAt < group.linkedAt) continue;
       if (await announceServiceDay(group, service)) result.servicesAnnounced += 1;
+    }
+
+    // ── Who uploaded what ──
+    // Services with uploads in the last day whose latest batch has gone quiet.
+    // A batch still going up is left alone, so it is not edited once per file.
+    const uploadsSince = new Date(
+      Math.max(now.getTime() - 24 * 60 * 60 * 1000, group.linkedAt.getTime()),
+    );
+    const { data: finished } = await admin
+      .from("uploads")
+      .select("service_id, completed_at")
+      .eq("status", "complete")
+      .gte("completed_at", uploadsSince.toISOString());
+    const latestByService = new Map<string, number>();
+    for (const upload of finished ?? []) {
+      const at = new Date(upload.completed_at ?? 0).getTime();
+      latestByService.set(upload.service_id, Math.max(at, latestByService.get(upload.service_id) ?? 0));
+    }
+    for (const [serviceId, latest] of latestByService) {
+      if (now.getTime() - latest < UPLOAD_SUMMARY_QUIET_MS) continue;
+      if ((await postUploadSummary(group, serviceId)) !== "unchanged") result.uploadSummaries += 1;
     }
 
     // ── Upload reminders ──

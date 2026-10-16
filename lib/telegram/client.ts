@@ -63,6 +63,21 @@ export function sendMessage(
   });
 }
 
+/** Replaces the text of a message the bot sent earlier. */
+export function editMessageText(
+  chatId: number,
+  messageId: number,
+  html: string,
+): Promise<TelegramResult<unknown>> {
+  return call("editMessageText", {
+    chat_id: chatId,
+    message_id: messageId,
+    text: html,
+    parse_mode: "HTML",
+    link_preview_options: { is_disabled: true },
+  });
+}
+
 export function getMe(): Promise<TelegramResult<{ username: string; first_name: string }>> {
   return call("getMe", {});
 }

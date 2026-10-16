@@ -30,7 +30,7 @@ import { Button, buttonClasses } from "@/components/ui/button";
 import { ProgressRing } from "@/components/ui/progress-ring";
 import { cn } from "@/lib/cn";
 import { formatBytes } from "@/lib/domain/uploads";
-import { fetchUploadService } from "@/app/(app)/upload-actions";
+import { fetchUploadService, uploadsFinished } from "@/app/(app)/upload-actions";
 import { UploadQueue, type UploadItem } from "@/lib/uploads/queue";
 
 /** A service someone can upload to right now, with its categories. */
@@ -152,12 +152,22 @@ export function UploadProvider({
     return () => window.removeEventListener("beforeunload", warn);
   }, [busy]);
 
-  // When a batch finishes, refresh the page underneath: counts, covers, albums.
+  // When a batch finishes, refresh the page underneath (counts, covers,
+  // albums) and let the team's Telegram group know who uploaded what.
   const wasBusy = useRef(false);
+  const reported = useRef(new Set<string>());
   useEffect(() => {
-    if (wasBusy.current && !busy) router.refresh();
+    if (wasBusy.current && !busy) {
+      router.refresh();
+      const finished = items.filter(
+        (item) => item.status === "done" && !reported.current.has(item.id),
+      );
+      for (const item of finished) reported.current.add(item.id);
+      const serviceIds = [...new Set(finished.map((item) => item.serviceId))];
+      if (serviceIds.length > 0) void uploadsFinished(serviceIds).catch(() => {});
+    }
     wasBusy.current = busy;
-  }, [busy, router]);
+  }, [busy, items, router]);
 
   function addFiles(files: File[]) {
     if (!service || !category || files.length === 0) return;
@@ -264,7 +274,7 @@ function UploadSheet({
           </button>
         </div>
 
-        <div className="flex flex-col gap-5 overflow-y-auto p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+        <div className="flex min-w-0 flex-col gap-5 overflow-x-hidden overflow-y-auto p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
           {lookup === "loading" ? (
             <p role="status" className="rounded-lg bg-surface-soft p-4 text-body-sm text-muted">
               Opening that service…
@@ -288,16 +298,16 @@ function UploadSheet({
             </div>
           ) : (
             <>
-              <fieldset className="flex flex-col gap-2">
+              <fieldset className="flex min-w-0 flex-col gap-2">
                 <legend className="mb-2 text-label text-muted uppercase">Service</legend>
-                <div className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5">
+                <div className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5 tablet:mx-0 tablet:grid tablet:grid-cols-2 tablet:overflow-visible tablet:px-0">
                   {services.map((entry) => {
                     const selected = entry.id === service.id;
                     return (
                       <label
                         key={entry.id}
                         className={cn(
-                          "flex min-w-40 shrink-0 cursor-pointer flex-col gap-0.5 rounded-md border p-3 transition-colors has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-primary",
+                          "flex min-w-40 shrink-0 cursor-pointer flex-col gap-0.5 rounded-md border p-3 tablet:min-w-0 transition-colors has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-primary",
                           selected
                             ? "border-primary bg-primary-soft"
                             : "border-hairline bg-surface-soft hover:border-border-strong",
@@ -327,7 +337,7 @@ function UploadSheet({
                 </div>
               </fieldset>
 
-              <fieldset className="flex flex-col gap-2">
+              <fieldset className="flex min-w-0 flex-col gap-2">
                 <legend className="mb-2 text-label text-muted uppercase">Upload to</legend>
                 <div className="flex flex-wrap gap-2">
                   {service.categories.map((entry) => {

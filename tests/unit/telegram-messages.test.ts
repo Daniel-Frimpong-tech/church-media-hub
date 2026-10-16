@@ -12,6 +12,7 @@ import {
   mention,
   serviceDayMessage,
   uploadReminderMessage,
+  uploadSummaryMessage,
   type ReminderTarget,
 } from "@/lib/telegram/messages";
 
@@ -179,5 +180,29 @@ describe("handoff messages", () => {
 describe("escapeHtml", () => {
   it("escapes the three characters Telegram's HTML mode treats specially", () => {
     expect(escapeHtml(`a < b && c > "d"`)).toBe(`a &lt; b &amp;&amp; c &gt; "d"`);
+  });
+});
+
+describe("uploadSummaryMessage", () => {
+  const service = { name: "Sunday <Service>", date: "Sun, Oct 12", url: "https://app.test/services/1" };
+
+  it("lists who uploaded what, one line each, without tagging anyone", () => {
+    const message = uploadSummaryMessage(service, [
+      { name: "Daniel", categoryName: "Baptism", files: "24 photos" },
+      { name: "Peter", categoryName: "Preacher", files: "20 photos and 2 videos" },
+    ]);
+    expect(message).toBe(
+      [
+        "📤 Uploads for <b>Sunday &lt;Service&gt;</b>, Sun, Oct 12",
+        "✅ Daniel uploaded 24 photos to Baptism",
+        "✅ Peter uploaded 20 photos and 2 videos to Preacher",
+        '<a href="https://app.test/services/1">Open the service</a>',
+      ].join("\n"),
+    );
+    expect(message).not.toContain("tg://user");
+  });
+
+  it("sends nothing when nothing was uploaded", () => {
+    expect(uploadSummaryMessage(service, [])).toBeNull();
   });
 });

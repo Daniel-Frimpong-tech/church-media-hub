@@ -81,7 +81,7 @@ export function Modal({
               <X aria-hidden size={18} />
             </button>
           </div>
-          <div className="flex flex-col gap-5 overflow-y-auto p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+          <div className="flex min-w-0 flex-col gap-5 overflow-x-hidden overflow-y-auto p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
             {children}
           </div>
         </div>
